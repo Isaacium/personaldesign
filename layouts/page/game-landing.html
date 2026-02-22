@@ -1,0 +1,47 @@
+{{ define "main" }}
+<article class="post">
+  <header class="post-header">
+    <h1 style="text-align: center;">{{ .Title }}</h1>
+  </header>
+  
+  <div class="post-content">
+    {{ .Content }}
+    
+    <div id="game-container" style="margin: 2rem auto; max-width: 100%;">
+        <div id="bible-speedrun-ui">
+          <p style="text-align: center; color: #64748b; margin-bottom: 20px;">Select a mode, then click the books in their chronological order as fast as you can!</p>
+
+          <div class="controls">
+              <button onclick="startGame('full')">Full Bible (66)</button>
+              <button onclick="startGame('ot')">Old Testament (39)</button>
+              <button onclick="startGame('nt')">New Testament (27)</button>
+          </div>
+
+          <div class="game-header">
+              <div>Find: <span id="target-display">---</span></div>
+              <div id="timer">0.0s</div>
+              <div class="best-time">Best: <span id="best-display">--</span></div>
+          </div>
+
+          <div id="victory-message">
+              <span class="victory-title">🎉 Finished in <span id="final-time"></span>!</span>
+              <span class="victory-subtitle" id="comparison-message"></span>
+          </div>
+
+          <div style="text-align: center;">
+              <input type="text" id="search-bar" placeholder="Type to filter books..." autocomplete="off">
+          </div>
+
+          <div class="grid" id="game-board"></div>
+        </div>
+    </div>
+    
+    <div id="high-score-display" style="text-align: center; font-family: monospace; margin-top: 1rem;">
+        Personal Best: <span id="best-time">--:--</span>
+    </div>
+  </div>
+</article>
+
+<link rel="stylesheet" href="{{ "css/bible-game.css" | relURL }}">
+<script src="{{ "js/bible-game.js" | relURL }}"></script>
+{{ end }}
