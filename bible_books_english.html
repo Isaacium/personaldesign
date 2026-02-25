@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bible Books Speed Run</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --text: #0f172a;
+            --correct: #22c55e;
+            --wrong: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 20px;
+            color: #64748b;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .game-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            align-items: center;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 20px;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        /* Align items in header for grid layout */
+        .game-header>div:first-child {
+            text-align: left;
+        }
+
+        .game-header>div:nth-child(2) {
+            text-align: center;
+        }
+
+        .game-header>div:last-child {
+            text-align: right;
+        }
+
+        #target-display {
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .hidden-target {
+            background-color: #e2e8f0;
+            color: #64748b;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            user-select: none;
+        }
+
+        .hidden-target:hover {
+            background-color: #cbd5e1;
+            color: #475569;
+        }
+
+        .revealed-target {
+            color: var(--primary);
+            background: none;
+            padding: 0;
+            cursor: default;
+            font-size: inherit;
+        }
+
+        #timer {
+            font-family: monospace;
+            font-size: 1.5rem;
+        }
+
+        .best-time {
+            font-size: 1rem;
+            color: #64748b;
+            font-weight: normal;
+        }
+
+        #search-bar {
+            width: 100%;
+            max-width: 500px;
+            padding: 12px 20px;
+            font-size: 1.1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border-color 0.2s;
+            display: none;
+            /* hidden until game starts */
+            box-sizing: border-box;
+        }
+
+        #search-bar:focus {
+            border-color: var(--primary);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+        }
+
+        .book-btn {
+            background-color: white;
+            color: var(--text);
+            border: 2px solid #e2e8f0;
+            padding: 15px 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgb(0 0 0 / 0.05);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60px;
+        }
+
+        .book-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .book-btn.correct {
+            background-color: var(--correct);
+            border-color: var(--correct);
+            color: white;
+            cursor: default;
+        }
+
+        .book-btn.found {
+            display: none !important;
+        }
+
+        .book-btn.wrong {
+            animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+            background-color: var(--wrong);
+            border-color: var(--wrong);
+            color: white;
+        }
+
+        @keyframes shake {
+
+            10%,
+            90% {
+                transform: translate3d(-1px, 0, 0);
+            }
+
+            20%,
+            80% {
+                transform: translate3d(2px, 0, 0);
+            }
+
+            30%,
+            50%,
+            70% {
+                transform: translate3d(-4px, 0, 0);
+            }
+
+            40%,
+            60% {
+                transform: translate3d(4px, 0, 0);
+            }
+        }
+
+        #victory-message {
+            display: none;
+            color: var(--correct);
+            margin-top: 20px;
+            padding: 20px;
+            background: #dcfce7;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .victory-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .victory-subtitle {
+            font-size: 1.1rem;
+            color: #15803d;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Bible Books Speed Run</h1>
+    <p>Select a mode, then click the books in their chronological order as fast as you can!</p>
+
+    <div class="controls">
+        <button onclick="startGame('full')">Full Bible (66)</button>
+        <button onclick="startGame('ot')">Old Testament (39)</button>
+        <button onclick="startGame('nt')">New Testament (27)</button>
+    </div>
+
+    <div class="game-header">
+        <div>Find: <span id="target-display">---</span></div>
+        <div id="timer">0.0s</div>
+        <div class="best-time">Best: <span id="best-display">--</span></div>
+    </div>
+
+    <div id="victory-message">
+        <span class="victory-title">🎉 Finished in <span id="final-time"></span>!</span>
+        <span class="victory-subtitle" id="comparison-message"></span>
+    </div>
+
+    <input type="text" id="search-bar" placeholder="Type to filter books..." autocomplete="off">
+
+    <div class="grid" id="game-board"></div>
+
+    <script>
+        const otBooks = [
+            "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth",
+            "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra",
+            "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon",
+            "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos",
+            "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi"
+        ];
+
+        const ntBooks = [
+            "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians",
+            "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians",
+            "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter",
+            "1 John", "2 John", "3 John", "Jude", "Revelation"
+        ];
+
+        let targetSequence = [];
+        let currentIndex = 0;
+        let timerInterval = null;
+        let startTime = 0;
+        let gameActive = false;
+        let currentMode = '';
+        let isTargetRevealed = false;
+
+        const board = document.getElementById('game-board');
+        const targetDisplay = document.getElementById('target-display');
+        const timerDisplay = document.getElementById('timer');
+        const bestDisplay = document.getElementById('best-display');
+        const victoryMessage = document.getElementById('victory-message');
+        const finalTimeDisplay = document.getElementById('final-time');
+        const comparisonDisplay = document.getElementById('comparison-message');
+        const searchBar = document.getElementById('search-bar');
+
+        // Allow revealing the target with a penalty
+        targetDisplay.addEventListener('click', () => {
+            if (!gameActive || isTargetRevealed) return;
+
+            isTargetRevealed = true;
+            targetDisplay.innerText = targetSequence[currentIndex];
+            targetDisplay.classList.remove('hidden-target');
+            targetDisplay.classList.add('revealed-target');
+
+            // Apply penalty (2.5 seconds)
+            startTime -= 2500;
+            updateTimer();
+        });
+
+        searchBar.addEventListener('input', () => {
+            const term = searchBar.value.toLowerCase();
+            const buttons = board.querySelectorAll('.book-btn:not(.found)');
+
+            buttons.forEach(btn => {
+                const name = btn.innerText.toLowerCase();
+                // Allow matching the start of the name, ignoring numbers (e.g. "John" matches "1 John")
+                const nameWithoutNumber = name.replace(/^\d+\s+/, '');
+
+                if (name.startsWith(term) || nameWithoutNumber.startsWith(term)) {
+                    btn.style.display = 'flex';
+                } else {
+                    btn.style.display = 'none';
+                }
+            });
+        });
+
+        function startGame(mode) {
+            // Stop existing game/timer
+            clearInterval(timerInterval);
+            victoryMessage.style.display = 'none';
+            currentIndex = 0;
+            timerDisplay.innerText = "0.0s";
+            gameActive = true;
+            currentMode = mode;
+
+            // Update Best Time Display for this mode
+            const savedBest = localStorage.getItem('bible_speedrun_best_' + mode);
+            bestDisplay.innerText = savedBest ? parseFloat(savedBest).toFixed(1) + "s" : "--";
+
+            // Determine sequence based on mode
+            if (mode === 'ot') targetSequence = [...otBooks];
+            else if (mode === 'nt') targetSequence = [...ntBooks];
+            else targetSequence = [...otBooks, ...ntBooks];
+
+            // Update display to show the first book to find
+            updateTargetDisplay();
+
+            // Create a shuffled array for the visual board
+            let shuffledBooks = [...targetSequence];
+            shuffleArray(shuffledBooks);
+
+            // Render board
+            board.innerHTML = '';
+            shuffledBooks.forEach(book => {
+                const btn = document.createElement('button');
+                btn.className = 'book-btn';
+                btn.innerText = book;
+                btn.onclick = () => handleBookClick(book, btn);
+                board.appendChild(btn);
+            });
+
+            // Show, clear, and focus search bar
+            searchBar.style.display = 'inline-block';
+            searchBar.value = '';
+            searchBar.focus();
+
+            // Start Timer
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 100);
+        }
+
+        function handleBookClick(clickedBook, btnElement) {
+            if (!gameActive) return;
+            if (btnElement.disabled) return;
+
+            const targetBook = targetSequence[currentIndex];
+
+            if (clickedBook === targetBook) {
+                // Correct!
+                btnElement.classList.add('found');
+                btnElement.classList.remove('wrong');
+                btnElement.disabled = true;
+                currentIndex++;
+
+                // Instantly clear the search and focus back for the next book
+                searchBar.value = '';
+                searchBar.dispatchEvent(new Event('input')); // Trigger the filter update
+                searchBar.focus();
+
+                if (currentIndex >= targetSequence.length) {
+                    winGame();
+                } else {
+                    updateTargetDisplay();
+                }
+            } else {
+                // Wrong!
+                btnElement.classList.remove('wrong');
+                void btnElement.offsetWidth; // Trigger reflow
+                btnElement.classList.add('wrong');
+
+                // Penalty (5 seconds)
+                startTime -= 5000;
+                updateTimer();
+            }
+        }
+
+        function updateTargetDisplay() {
+            if (currentIndex < targetSequence.length) {
+                isTargetRevealed = false;
+                targetDisplay.innerText = "Reveal Book (+2.5s)";
+                targetDisplay.classList.add('hidden-target');
+                targetDisplay.classList.remove('revealed-target');
+            }
+        }
+
+        function updateTimer() {
+            const elapsedTime = (Date.now() - startTime) / 1000;
+            timerDisplay.innerText = elapsedTime.toFixed(1) + "s";
+        }
+
+        function winGame() {
+            clearInterval(timerInterval);
+            gameActive = false;
+
+            const rawTime = (Date.now() - startTime) / 1000;
+            const finalTimeStr = rawTime.toFixed(1) + "s";
+
+            targetDisplay.innerText = "Done!";
+            targetDisplay.classList.remove('hidden-target');
+            targetDisplay.classList.add('revealed-target');
+            finalTimeDisplay.innerText = finalTimeStr;
+
+            // Reveal all in correct order
+            board.innerHTML = '';
+            targetSequence.forEach(book => {
+                const div = document.createElement('div');
+                div.className = 'book-btn correct';
+                div.innerText = book;
+                board.appendChild(div);
+            });
+
+            // Handle High Score Logic
+            const storageKey = 'bible_speedrun_best_' + currentMode;
+            const previousBest = localStorage.getItem(storageKey);
+            let compMsg = "";
+
+            if (!previousBest) {
+                localStorage.setItem(storageKey, rawTime);
+                compMsg = "First run completed! (New Record)";
+            } else {
+                const prevBestVal = parseFloat(previousBest);
+                const diff = rawTime - prevBestVal;
+
+                if (diff < 0) {
+                    // New Record
+                    const improvedBy = Math.abs(diff).toFixed(1);
+                    localStorage.setItem(storageKey, rawTime);
+                    compMsg = `🔥 New Record! Beat previous best by ${improvedBy}s!`;
+                } else if (diff === 0) {
+                    compMsg = "Tied your best time!";
+                } else {
+                    // Slower
+                    const missedBy = diff.toFixed(1);
+                    compMsg = `Missed best time (${prevBestVal.toFixed(1)}s) by ${missedBy}s.`;
+                }
+            }
+
+            comparisonDisplay.innerText = compMsg;
+            victoryMessage.style.display = 'block';
+
+            // Hide search bar when game ends
+            searchBar.style.display = 'none';
+
+            // Update the header display immediately
+            bestDisplay.innerText = localStorage.getItem(storageKey)
+                ? parseFloat(localStorage.getItem(storageKey)).toFixed(1) + "s"
+                : finalTimeStr;
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Fisher-Yates Shuffle Algorithm
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+    </script>
+</body>
+
+</html>

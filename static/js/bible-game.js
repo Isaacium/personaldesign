@@ -30,8 +30,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const finalTimeDisplay = document.getElementById('final-time');
     const comparisonDisplay = document.getElementById('comparison-message');
     const searchBar = document.getElementById('search-bar');
+    const muteIcon = document.getElementById('mute-icon');
+    const volumeSlider = document.getElementById('volume-slider');
 
     if (!board || !targetDisplay || !timerDisplay) return;
+
+    let previousVolume = 1;
+
+    if (muteIcon && volumeSlider) {
+        // Toggle mute icon and slider value when clicking the icon
+        muteIcon.addEventListener('click', () => {
+            if (parseFloat(volumeSlider.value) > 0) {
+                // Mute
+                previousVolume = volumeSlider.value;
+                volumeSlider.value = 0;
+                muteIcon.innerText = "🔇";
+            } else {
+                // Unmute
+                volumeSlider.value = previousVolume > 0 ? previousVolume : 1;
+                muteIcon.innerText = "🔊";
+            }
+        });
+
+        // Update the icon based on slider input manually dragged
+        volumeSlider.addEventListener('input', () => {
+            if (parseFloat(volumeSlider.value) === 0) {
+                muteIcon.innerText = "🔇";
+            } else {
+                muteIcon.innerText = "🔊";
+                previousVolume = volumeSlider.value;
+            }
+        });
+    }
 
     // Allow revealing the target with a penalty
     targetDisplay.addEventListener('click', () => {
@@ -65,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Make functions globally available if needed by onclick attributes
-    window.startGame = function(mode) {
+    window.startGame = function (mode) {
         // Stop existing game/timer
         clearInterval(timerInterval);
         victoryMessage.style.display = 'none';
@@ -113,6 +143,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleBookClick(clickedBook, btnElement) {
         if (!gameActive) return;
         if (btnElement.disabled) return;
+
+        // Read the clicked book out loud
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(clickedBook);
+            const volumeSlider = document.getElementById('volume-slider');
+            if (volumeSlider) {
+                utterance.volume = parseFloat(volumeSlider.value);
+            }
+            window.speechSynthesis.speak(utterance);
+        }
 
         const targetBook = targetSequence[currentIndex];
 
