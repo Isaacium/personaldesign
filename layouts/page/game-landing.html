@@ -12,10 +12,22 @@
         <p style="text-align: center; color: #64748b; margin-bottom: 20px;">Select a mode, then click the books in their
           chronological order as fast as you can!</p>
 
+        <div class="language-settings" style="display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; font-size: 1.1rem; flex-wrap: wrap;">
+          <label class="toggle-label" style="cursor: pointer;">
+            <input type="radio" name="language-toggle" value="en" checked> English
+          </label>
+          <label class="toggle-label" style="cursor: pointer;">
+            <input type="radio" name="language-toggle" value="zh"> 中文 (Chinese)
+          </label>
+          <label class="toggle-label" id="pinyin-container" style="cursor: pointer; display: none;">
+            <input type="checkbox" id="pinyin-toggle"> Show Pinyin
+          </label>
+        </div>
+
         <div class="controls">
-          <button onclick="startGame('full')">Full Bible (66)</button>
-          <button onclick="startGame('ot')">Old Testament (39)</button>
-          <button onclick="startGame('nt')">New Testament (27)</button>
+          <button id="mode-btn-full" onclick="startGame('full')">Full Bible (66)</button>
+          <button id="mode-btn-ot" onclick="startGame('ot')">Old Testament (39)</button>
+          <button id="mode-btn-nt" onclick="startGame('nt')">New Testament (27)</button>
         </div>
 
         <div class="volume-control"

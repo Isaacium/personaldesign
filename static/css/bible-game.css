@@ -149,9 +149,22 @@ button:active {
     box-shadow: 0 2px 4px rgb(0 0 0 / 0.05);
     transition: all 0.2s;
     display: flex;
+    flex-direction: column;
+    gap: 4px;
     align-items: center;
     justify-content: center;
     min-height: 60px;
+}
+
+.book-btn .pinyin {
+    font-size: 0.8em;
+    color: #64748b;
+    font-weight: normal;
+}
+
+.book-btn.correct .pinyin,
+.book-btn.wrong .pinyin {
+    color: rgba(255, 255, 255, 0.85);
 }
 
 .book-btn:hover:not(:disabled) {
@@ -218,4 +231,11 @@ button:active {
     font-size: 1.1rem;
     color: #15803d;
     display: block;
+}
+
+/* Dark mode adjustments for Hugo Pulp Theme compatibility */
+@media (prefers-color-scheme: dark) {
+    .toggle-label {
+        color: #f8fafc; /* Make text white/light gray in dark mode */
+    }
 }
