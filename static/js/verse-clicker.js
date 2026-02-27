@@ -52,8 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
         uiNode.style.display = "block";
     }
 
-    // Set up search and volume controls
-    const searchBar = document.getElementById("vc-search-bar");
+    // Set up volume controls
     const muteIcon = document.getElementById("vc-mute-icon");
     const volumeSlider = document.getElementById("vc-volume-slider");
 
@@ -79,26 +78,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    if (searchBar) {
-        searchBar.addEventListener('input', () => {
-            const term = searchBar.value.toLowerCase().replace(/\s+/g, '');
-            const bank = document.getElementById("vc-word-bank");
-            const words = bank.querySelectorAll('.vc-word:not(.vc-correct)');
-            
-            words.forEach(w => {
-                const text = (w.dataset.word || "").toLowerCase();
-                const pinyinAttr = (w.dataset.pinyin || "").toLowerCase().replace(/\s+/g, '');
-                const pinyinNormalized = pinyinAttr.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                
-                if (text.includes(term) || pinyinAttr.includes(term) || pinyinNormalized.includes(term)) {
-                    w.style.display = w.dataset.word && vcShowPinyin && getSelectedVersion().title.includes("Chinese") && !getSelectedVersion().title.includes("Pinyin") ? 'inline-flex' : 'block';
-                } else {
-                    w.style.display = 'none';
-                }
-            });
-        });
-    }
-
     window.vcVersions = versions;
     initVerseGameUI();
 });
@@ -110,6 +89,7 @@ let vcCurrentTokens = [];
 let vcTargetIndex = 0;
 let vcShowPinyin = false;
 let vcPreviousVolume = 1;
+const VC_BANK_SIZE = 10; // total words shown in bank at once (1 correct + distractors)
 
 function getSelectedVersion() {
     const radio = document.querySelector('input[name="vc-language-toggle"]:checked');
@@ -210,10 +190,8 @@ function resetVerseGame() {
     document.getElementById("vc-victory-message").style.display = "none";
     document.getElementById("vc-start-btn").style.display = "inline-block";
     
-    const searchCont = document.getElementById("vc-search-container");
-    if(searchCont) searchCont.style.display = "none";
     const volCont = document.getElementById("vc-volume-control");
-    if(volCont) volCont.style.display = "none";
+    if (volCont) volCont.style.display = "none";
     
     // Check if new mode is selected
     updateBestTimeDisplay();
@@ -232,57 +210,78 @@ window.showCurrentLeaderboardVC = function() {
     window.leaderboardSystem.showLeaderboard(gameId);
 };
 
-async function startVerseGame() {
-    const username = await window.leaderboardSystem.promptUsername();
-    if (!username) return;
-
-    resetVerseGame(); 
-    
-    const v = getSelectedVersion();
-    vcCurrentTokens = tokenizeText(v.text);
-    vcTargetIndex = 0;
-    
-    const display = document.getElementById("vc-verse-display");
+// Build and display a random sample of VC_BANK_SIZE words in the bank.
+// Always includes the current target word; the rest are random distractors
+// drawn from the remaining (not-yet-placed) tokens.
+function refreshWordBank() {
     const bank = document.getElementById("vc-word-bank");
-    
-    display.innerHTML = "";
     bank.innerHTML = "";
-    
-    let bankTokens = Array.from(vcCurrentTokens).map((word, i) => ({ word, index: i }));
-    shuffleArray(bankTokens);
-    
-    const sBar = document.getElementById("vc-search-bar");
-    if(sBar) sBar.value = "";
-    
-    bankTokens.forEach(t => {
+
+    if (vcTargetIndex >= vcCurrentTokens.length) return;
+
+    const targetWord = vcCurrentTokens[vcTargetIndex];
+
+    // Collect indices of remaining tokens (excluding the current target)
+    const remaining = [];
+    for (let i = vcTargetIndex + 1; i < vcCurrentTokens.length; i++) {
+        remaining.push(i);
+    }
+    shuffleArray(remaining);
+
+    // Pick up to (VC_BANK_SIZE - 1) distractors
+    const distractorIndices = remaining.slice(0, VC_BANK_SIZE - 1);
+
+    // Combine target + distractors and shuffle the display order
+    const bankEntries = [
+        { word: targetWord, index: vcTargetIndex },
+        ...distractorIndices.map(i => ({ word: vcCurrentTokens[i], index: i }))
+    ];
+    shuffleArray(bankEntries);
+
+    bankEntries.forEach(t => {
         const el = document.createElement("div");
         el.className = "vc-word";
         el.dataset.index = t.index;
         el.dataset.word = t.word;
-        
+
         if (typeof pinyinPro !== 'undefined' && /[\u4e00-\u9fa5]/.test(t.word)) {
             el.dataset.pinyin = pinyinPro.pinyin(t.word, { type: 'string' });
         } else {
             el.dataset.pinyin = "";
         }
-        
+
         el.addEventListener("click", () => handleWordClick(el, t.index));
         bank.appendChild(el);
     });
-    
+
     updateExistingWords();
-    
+
+}
+
+async function startVerseGame() {
+    const username = await window.leaderboardSystem.promptUsername();
+    if (!username) return;
+
+    resetVerseGame();
+
+    const v = getSelectedVersion();
+    vcCurrentTokens = tokenizeText(v.text);
+    vcTargetIndex = 0;
+
+    const display = document.getElementById("vc-verse-display");
+    display.innerHTML = "";
+
+    refreshWordBank();
+
     document.getElementById("vc-game-area").style.display = "block";
     document.getElementById("vc-start-btn").style.display = "none";
-    
-    const searchCont = document.getElementById("vc-search-container");
-    if(searchCont) searchCont.style.display = "block";
+
     const volCont = document.getElementById("vc-volume-control");
-    if(volCont) volCont.style.display = "flex";
-    
+    if (volCont) volCont.style.display = "flex";
+
     vcStartTime = Date.now();
     vcGameActive = true;
-    
+
     vcTimerInterval = setInterval(() => {
         const elapsed = (Date.now() - vcStartTime) / 1000;
         document.getElementById("vc-timer").textContent = elapsed.toFixed(1) + "s";
@@ -291,49 +290,43 @@ async function startVerseGame() {
 
 function handleWordClick(el, tokenIndex) {
     if (!vcGameActive) return;
-    
+
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const vTitle = getSelectedVersion().title;
         const textToSpeak = el.dataset.word;
         const utterance = new SpeechSynthesisUtterance(textToSpeak);
-        
+
         utterance.lang = vTitle.includes("Chinese") ? "zh-CN" : "en-US";
         const volumeSlider = document.getElementById("vc-volume-slider");
         if (volumeSlider) utterance.volume = parseFloat(volumeSlider.value);
-        
+
         window.speechSynthesis.speak(utterance);
     }
-    
-    if (el.dataset.word === vcCurrentTokens[vcTargetIndex]) {
-        const bank = document.getElementById("vc-word-bank");
+
+    if (tokenIndex === vcTargetIndex) {
+        // Correct word chosen
         const display = document.getElementById("vc-verse-display");
-        
-        bank.removeChild(el);
-        
+
         const correctEl = document.createElement("div");
         correctEl.className = "vc-word vc-correct";
         correctEl.dataset.word = el.dataset.word;
         correctEl.dataset.pinyin = el.dataset.pinyin;
         display.appendChild(correctEl);
-        
+        // Auto-scroll the display area to always show the latest word
+        display.scrollTop = display.scrollHeight;
+
         vcTargetIndex++;
-        
-        const sBar = document.getElementById("vc-search-bar");
-        if(sBar) {
-            sBar.value = "";
-            sBar.dispatchEvent(new Event("input"));
-            sBar.focus();
-        }
-        
-        updateExistingWords();
-        
+
         if (vcTargetIndex === vcCurrentTokens.length) {
+            updateExistingWords();
             handleVictory();
+        } else {
+            refreshWordBank();
         }
     } else {
         el.classList.add("vc-word-error");
-        setTimeout(() => el.classList.remove("vc-word-error"), 400); 
+        setTimeout(() => el.classList.remove("vc-word-error"), 400);
     }
 }
 
@@ -373,8 +366,6 @@ function handleVictory() {
     document.getElementById("vc-start-btn").textContent = "Play Again";
     document.getElementById("vc-word-bank").innerHTML = "";
 
-    const searchCont = document.getElementById("vc-search-container");
-    if(searchCont) searchCont.style.display = "none";
     const volCont = document.getElementById("vc-volume-control");
-    if(volCont) volCont.style.display = "none";
+    if (volCont) volCont.style.display = "none";
 }

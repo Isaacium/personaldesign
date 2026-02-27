@@ -15,9 +15,7 @@
     <input type="range" id="vc-volume-slider" min="0" max="1" step="0.1" value="1" style="width: 150px; cursor: pointer;">
   </div>
 
-  <div style="text-align: center; margin-bottom: 20px; display: none;" id="vc-search-container">
-    <input type="text" id="vc-search-bar" placeholder="Type to filter words..." autocomplete="off" style="padding: 0.5rem; width: 80%; max-width: 400px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 1rem;">
-  </div>
+
 
   <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
     <div id="vc-timer" style="font-size: 1.5rem; font-weight: bold; font-family: monospace;">0.0s</div>
@@ -31,7 +29,7 @@
 
   <div id="vc-game-area" style="display: none;">
     <!-- Where the correctly clicked words appear -->
-    <div id="vc-verse-display" style="min-height: 100px; padding: 1.5rem; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; margin-bottom: 20px; font-size: 1.25rem; line-height: 2; text-align: left; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start;">
+    <div id="vc-verse-display" style="min-height: 80px; max-height: 200px; overflow-y: auto; padding: 1.5rem; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; margin-bottom: 20px; font-size: 1.25rem; line-height: 2; text-align: left; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start;">
     </div>
 
     <!-- Where the scrambled words are to click -->
