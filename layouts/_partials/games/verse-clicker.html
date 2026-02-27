@@ -1,0 +1,34 @@
+<div id="verse-clicker-ui" style="display: none; margin: 2rem auto; max-width: 800px; text-align: center;">
+  <p style="color: #64748b; margin-bottom: 20px;">Click the words in the correct order to complete the verse!</p>
+
+  <div class="language-settings" id="vc-language-settings" style="display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; font-size: 1.1rem; flex-wrap: wrap;">
+    <!-- Populated by JS -->
+  </div>
+
+  <div class="controls" style="margin-bottom: 20px;">
+    <button id="vc-start-btn" onclick="startVerseGame()">Start Game</button>
+  </div>
+
+  <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div id="vc-timer" style="font-size: 1.5rem; font-weight: bold; font-family: monospace;">0.0s</div>
+    <div class="best-time" style="font-size: 1.1rem; color: #64748b;">Best: <span id="vc-best-display">--</span></div>
+  </div>
+
+  <div id="vc-victory-message" style="display: none; padding: 1.5rem; background: #dcfce7; border-radius: 8px; margin-bottom: 20px; border: 1px solid #bbf7d0;">
+    <span class="victory-title" style="display: block; font-size: 1.5rem; color: #166534; font-weight: bold; margin-bottom: 0.5rem;">🎉 Finished in <span id="vc-final-time"></span>!</span>
+    <span class="victory-subtitle" id="vc-comparison-message" style="color: #15803d; font-size: 1.1rem;"></span>
+  </div>
+
+  <div id="vc-game-area" style="display: none;">
+    <!-- Where the correctly clicked words appear -->
+    <div id="vc-verse-display" style="min-height: 100px; padding: 1.5rem; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; margin-bottom: 20px; font-size: 1.25rem; line-height: 2; text-align: left; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start;">
+    </div>
+
+    <!-- Where the scrambled words are to click -->
+    <div id="vc-word-bank" style="padding: 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="{{ "css/verse-clicker.css" | relURL }}">
+<script src="{{ "js/verse-clicker.js" | relURL }}"></script>
