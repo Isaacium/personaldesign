@@ -3,3 +3,12 @@ instructions.md
 
 # Ignore public folder
 public/
+
+# Ignore node_modules
+node_modules/
+
+# Ignore .dev.vars
+.dev.vars
+
+# Ignore .wrangler
+.wrangler/
