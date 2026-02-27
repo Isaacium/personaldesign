@@ -1,5 +1,5 @@
 baseurl = "https://i-liu.com/"
-title = "Site Title"
+title = "Isaac Liu"
 theme = "pulp"
 canonifyurls = true
 hasCJKLanguage = true
@@ -11,7 +11,7 @@ hasCJKLanguage = true
 
 [params]
     author = "Isaac Liu"
-    avatar = "avatar.jpg"
+    avatar = "avatar.png"
     # avatarDescription = "My avatar description"
     favicon = "favicon.ico"
     description = """
@@ -29,29 +29,22 @@ hasCJKLanguage = true
     term = ["JSON", "HTML"]
 
 [[menu.main]]
-    identifier = "blog"
-    # name = "Blog" #If display text link, cancel comment out
-    pre = "<i class='fa fa-book-open fa-lg'></i>" #Choose your favorite font from Font Awesome
-    url = "/blog/"
-    weight = 10
-
-[[menu.main]]
     identifier = "games"
-    # name = "Blog" #If display text link, cancel comment out
+    # name = "Games" #If display text link, cancel comment out
     pre = "<i class='fa fa-gamepad fa-lg'></i>" #Choose your favorite font from Font Awesome
     url = "/games/"
-    weight = 20
+    weight = 10
 
 [[menu.main]]
     identifier = "github"
     # name = "GitHub"
     pre = "<i class='fab fa-github fa-lg'></i>"
-    url = "https://github.com/username"
-    weight = 30
+    url = "https://github.com/Isaacium"
+    weight = 20
 
 [[menu.main]]
     identifier = "email"
     # name = "Email"
     pre = "<i class='fa fa-envelope fa-lg'></i>"
-    url = "mailto:username@example.com"
-    weight = 40
+    url = "mailto:isaac_liu1@baylor.edu"
+    weight = 30
