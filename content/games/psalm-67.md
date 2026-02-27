@@ -24,15 +24,3 @@ Psalm 67:1-7 (NIV)
 神 要 賜 福 與 我 們 ； 地 的 四 極 都 要 敬 畏 他 ！
 
 詩 篇 67：1-7 (和合本)
-
-## Chinese Pinyin (CUV)
-
-Yuàn shén liánmǐn wǒmen, cì fú yǔ wǒmen, yòng liǎn guāngzhào wǒmen, (xī lā)
-hǎo jiào shìjiè dézhī nǐ de dàolù, wàn guó dézhī nǐ de jiù'ēn.
-Shén a, yuàn liè bāng chēngzàn nǐ! Yuàn wàn mín dōu chēngzàn nǐ!
-Yuàn wàn guó dōu kuàilè huānhū; yīnwèi nǐ bì àn gōngzhèng shěnpàn wàn mín, yǐndǎo shìshàng de wàn guó. (xī lā)
-Shén a, yuàn liè bāng chēngzàn nǐ! Yuàn wàn mín dōu chēngzàn nǐ!
-Dì yǐ jīng chūle tǔchǎn; shén ─ jiùshì wǒmen de shén yào cì fú yǔ wǒmen.
-Shén yào cì fú yǔ wǒmen; dì de sì jí dōu yào jìngwèi tā!
-
-Shīpiān 67:1-7 (Héhéběn)
