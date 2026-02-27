@@ -238,7 +238,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Make functions globally available if needed by onclick attributes
-    window.startGame = function (mode) {
+    window.showCurrentLeaderboard = function() {
+        const mode = currentMode || 'full';
+        const gameId = 'bible-speedrun_' + currentLanguage + '_' + mode;
+        window.leaderboardSystem.showLeaderboard(gameId);
+    };
+
+    window.startGame = async function (mode) {
+        const username = await window.leaderboardSystem.promptUsername();
+        if (!username) return; // User cancelled
+
         // Stop existing game/timer
         clearInterval(timerInterval);
         victoryMessage.style.display = 'none';
@@ -381,6 +390,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Handle High Score Logic (per mode and language)
         const storageKey = 'bible_speedrun_best_' + currentLanguage + '_' + currentMode;
         const previousBest = localStorage.getItem(storageKey);
+        
+        // Submit score to global leaderboard (send time in ms)
+        const gameIdForLeaderboard = 'bible-speedrun_' + currentLanguage + '_' + currentMode;
+        window.leaderboardSystem.submitScore(gameIdForLeaderboard, Math.round(rawTime * 1000));
+
         let compMsg = "";
 
         if (!previousBest) {

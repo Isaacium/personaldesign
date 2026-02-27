@@ -7,6 +7,7 @@
 
   <div class="controls" style="margin-bottom: 20px;">
     <button id="vc-start-btn" onclick="startVerseGame()">Start Game</button>
+    <button id="btn-leaderboard" onclick="showCurrentLeaderboardVC()" style="background-color: #6366f1;">Leaderboard</button>
   </div>
 
   <div class="volume-control" id="vc-volume-control" style="margin-top: 15px; margin-bottom: 15px; display: none; align-items: center; justify-content: center; gap: 10px;">
@@ -40,5 +41,6 @@
 </div>
 
 <link rel="stylesheet" href="{{ "css/verse-clicker.css" | relURL }}">
+<script src="{{ "js/leaderboard.js" | relURL }}"></script>
 <script src="{{ "js/verse-clicker.js" | relURL }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.22.0/dist/index.js"></script>

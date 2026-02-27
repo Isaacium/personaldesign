@@ -196,7 +196,7 @@ function tokenizeText(text) {
 
 function updateBestTimeDisplay() {
     const v = getSelectedVersion();
-    const gameId = window.location.pathname + "-" + v.title;
+    const gameId = window.location.pathname.replace(/\/$/, '') + "-" + v.title.replace(/\s+/g, '-');
     const bestTimes = JSON.parse(localStorage.getItem('vc-best-times') || '{}');
     const best = bestTimes[gameId];
     document.getElementById("vc-best-display").textContent = best ? best.toFixed(1) + "s" : "--";
@@ -226,7 +226,16 @@ function shuffleArray(array) {
     }
 }
 
-function startVerseGame() {
+window.showCurrentLeaderboardVC = function() {
+    const v = getSelectedVersion();
+    const gameId = window.location.pathname.replace(/\/$/, '') + "-" + v.title.replace(/\s+/g, '-');
+    window.leaderboardSystem.showLeaderboard(gameId);
+};
+
+async function startVerseGame() {
+    const username = await window.leaderboardSystem.promptUsername();
+    if (!username) return;
+
     resetVerseGame(); 
     
     const v = getSelectedVersion();
@@ -336,7 +345,10 @@ function handleVictory() {
     document.getElementById("vc-final-time").textContent = elapsed.toFixed(1) + "s";
     
     const v = getSelectedVersion();
-    const gameId = window.location.pathname + "-" + v.title;
+    const gameId = window.location.pathname.replace(/\/$/, '') + "-" + v.title.replace(/\s+/g, '-');
+    
+    window.leaderboardSystem.submitScore(gameId, Math.round(elapsed * 1000));
+    
     const bestTimes = JSON.parse(localStorage.getItem('vc-best-times') || '{}');
     const prevBest = bestTimes[gameId];
     

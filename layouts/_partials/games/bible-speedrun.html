@@ -19,6 +19,7 @@
           <button id="mode-btn-full" onclick="startGame('full')">Full Bible (66)</button>
           <button id="mode-btn-ot" onclick="startGame('ot')">Old Testament (39)</button>
           <button id="mode-btn-nt" onclick="startGame('nt')">New Testament (27)</button>
+          <button id="btn-leaderboard" onclick="showCurrentLeaderboard()" style="background-color: #6366f1;">Leaderboard</button>
         </div>
 
         <div class="volume-control"
@@ -52,4 +53,5 @@
     </div>
 
 <link rel="stylesheet" href="{{ "css/bible-game.css" | relURL }}">
+<script src="{{ "js/leaderboard.js" | relURL }}"></script>
 <script src="{{ "js/bible-game.js" | relURL }}"></script>
