@@ -39,23 +39,30 @@
   40%, 60% { transform: translate3d(4px, 0, 0); }
 }
 
-#vc-start-btn {
-  background-color: #2563eb;
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+.controls button {
+  background-color: var(--primary, #2563eb);
   color: white;
   border: none;
+  padding: 10px 20px;
   border-radius: 8px;
-  padding: 12px 24px;
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: 16px;
   cursor: pointer;
-  transition: background-color 0.2s;
-  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+  transition: background-color 0.2s, transform 0.1s;
+  font-family: inherit;
 }
 
-#vc-start-btn:hover {
-  background-color: #1d4ed8;
+.controls button:hover {
+  background-color: var(--primary-hover, #1d4ed8);
 }
 
-#vc-start-btn:active {
-  transform: scale(0.98);
+.controls button:active {
+  transform: scale(0.95);
 }
