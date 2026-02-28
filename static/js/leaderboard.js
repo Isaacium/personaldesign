@@ -2,18 +2,80 @@
 
 const SECRET_KEY = "MaterialsScience_2026!"; // Client-side anti-cheat token
 
-async function promptUsername() {
+async function promptUsername(forcePrompt = false) {
   let stored = localStorage.getItem('game_username');
-  if (stored) return stored;
+  if (stored && !forcePrompt) return stored;
 
-  let username = prompt("Welcome! Please enter a username for the leaderboard:");
-  while (!username || username.trim().length === 0 || username.trim().length > 20) {
-    if (username === null) return null; // User cancelled
-    username = prompt("Please enter a valid username (1-20 characters):");
-  }
+  return new Promise((resolve) => {
+    const containerId = "username-prompt-modal";
+    let modal = document.getElementById(containerId);
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = containerId;
+      modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+        z-index: 1001; font-family: sans-serif;
+      `;
+      
+      modal.innerHTML = `
+        <div style="background: white; padding: 2rem; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; text-align: center;">
+          <h2 style="margin-top: 0; color: #334155;">Enter Username</h2>
+          <p style="color: #64748b; margin-bottom: 1.5rem;">Please enter a username for the leaderboard (1-20 characters):</p>
+          <input type="text" id="${containerId}-input" maxlength="20" placeholder="Your username" style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; font-size: 1rem; margin-bottom: 1rem;">
+          <div style="color: #ef4444; font-size: 0.875rem; display: none; margin-bottom: 1rem;" id="${containerId}-error">Please enter a valid username (1-20 characters)</div>
+          <div style="display: flex; gap: 1rem; justify-content: center;">
+            <button id="${containerId}-cancel" style="padding: 0.5rem 1rem; border: none; background: #e2e8f0; color: #475569; border-radius: 4px; cursor: pointer; font-size: 1rem;">Cancel</button>
+            <button id="${containerId}-submit" style="padding: 0.5rem 1rem; border: none; background: #3b82f6; color: white; border-radius: 4px; cursor: pointer; font-size: 1rem;">Submit</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+    
+    const input = document.getElementById(`${containerId}-input`);
+    const error = document.getElementById(`${containerId}-error`);
+    const cancelBtn = document.getElementById(`${containerId}-cancel`);
+    const submitBtn = document.getElementById(`${containerId}-submit`);
+    
+    input.value = stored || "";
+    error.style.display = 'none';
+    modal.style.display = 'flex';
+    input.focus();
 
-  localStorage.setItem('game_username', username.trim());
-  return username.trim();
+    const cleanup = () => {
+      modal.style.display = 'none';
+      submitBtn.onclick = null;
+      cancelBtn.onclick = null;
+      input.onkeypress = null;
+    };
+
+    const attemptSubmit = () => {
+      const val = input.value.trim();
+      if (val.length > 0 && val.length <= 20) {
+        localStorage.setItem('game_username', val);
+        cleanup();
+        resolve(val);
+      } else {
+        error.style.display = 'block';
+      }
+    };
+
+    submitBtn.onclick = attemptSubmit;
+    
+    cancelBtn.onclick = () => {
+      cleanup();
+      resolve(stored || null);
+    };
+
+    input.onkeypress = (e) => {
+      if (e.key === 'Enter') attemptSubmit();
+    };
+  });
+}
+
+function changeUser() {
+  return promptUsername(true);
 }
 
 // Convert ArrayBuffer to Hex string
@@ -105,6 +167,9 @@ async function showLeaderboard(game_id, containerId = "leaderboard-modal") {
         <h2 style="margin-top: 0; text-align: center; color: #334155;">Top 10 Leaderboard</h2>
         <button id="${containerId}-close" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
         <div id="${containerId}-content" style="margin-top: 1rem; min-height: 200px;">Loading...</div>
+        <div style="text-align: center; margin-top: 1rem; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+          <button id="${containerId}-change-user" style="padding: 0.5rem 1rem; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; border-radius: 4px; cursor: pointer; font-size: 0.875rem; transition: background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f8fafc'">Change User</button>
+        </div>
       </div>
     `;
     document.body.appendChild(modal);
@@ -118,6 +183,17 @@ async function showLeaderboard(game_id, containerId = "leaderboard-modal") {
   }
 
   modal.style.display = 'flex';
+  
+  const changeUserBtn = document.getElementById(`${containerId}-change-user`);
+  if (changeUserBtn) {
+    changeUserBtn.onclick = () => {
+      changeUser().then((newUser) => {
+        // If they actually changed the user or didn't cancel outright, perhaps refresh leaderboard.
+        // It's safe to always refresh or just refresh if user changed. Let's just refresh.
+        showLeaderboard(game_id, containerId);
+      });
+    };
+  }
   const content = document.getElementById(`${containerId}-content`);
   content.innerHTML = '<div style="text-align: center; color: #64748b;">Loading scores...</div>';
 
@@ -160,4 +236,4 @@ async function showLeaderboard(game_id, containerId = "leaderboard-modal") {
 }
 
 // Make sure it's accessible globally if needed by inline handlers
-window.leaderboardSystem = { promptUsername, submitScore, showLeaderboard, formatTime };
+window.leaderboardSystem = { promptUsername, submitScore, showLeaderboard, formatTime, changeUser };
