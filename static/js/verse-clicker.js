@@ -97,16 +97,36 @@ function getSelectedVersion() {
     return window.vcVersions[parseInt(radio.value)];
 }
 
+function vcCleanWord(word) {
+    if (!word) return "";
+    const clean = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()""''“”‘’。，！？\[\]—–]/g, "");
+    return clean.length > 0 ? clean : word; 
+}
+
+function vcWordsMatch(w1, w2) {
+    const c1 = vcCleanWord(w1);
+    const c2 = vcCleanWord(w2);
+    
+    if (c1.toLowerCase() === "god" && c2.toLowerCase() === "god") {
+        return c1 === c2;
+    }
+    
+    return c1.toLowerCase() === c2.toLowerCase();
+}
+
 function updateExistingWords() {
     const words = document.querySelectorAll('.vc-word');
     words.forEach(w => {
+        const isCorrect = w.classList.contains('vc-correct');
+        const displayText = isCorrect ? w.dataset.word : vcCleanWord(w.dataset.word);
+
         if (vcShowPinyin && w.dataset.pinyin && getSelectedVersion().title.includes("Chinese") && !getSelectedVersion().title.includes("Pinyin")) {
-            w.innerHTML = `<span>${w.dataset.word}</span><span style="font-size:0.75rem; color:#64748b; margin-top:4px; display:block;">${w.dataset.pinyin}</span>`;
+            w.innerHTML = `<span>${displayText}</span><span style="font-size:0.75rem; color:#64748b; margin-top:4px; display:block;">${w.dataset.pinyin}</span>`;
             w.style.flexDirection = "column";
             w.style.display = w.style.display === "none" ? "none" : "inline-flex";
             w.style.alignItems = "center";
         } else {
-            w.textContent = w.dataset.word;
+            w.textContent = displayText;
             w.style.display = w.style.display === "none" ? "none" : "block";
         }
     });
@@ -294,7 +314,7 @@ function handleWordClick(el, tokenIndex) {
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const vTitle = getSelectedVersion().title;
-        const textToSpeak = el.dataset.word;
+        const textToSpeak = vcCleanWord(el.dataset.word);
         const utterance = new SpeechSynthesisUtterance(textToSpeak);
 
         utterance.lang = vTitle.includes("Chinese") ? "zh-CN" : "en-US";
@@ -304,14 +324,22 @@ function handleWordClick(el, tokenIndex) {
         window.speechSynthesis.speak(utterance);
     }
 
-    if (tokenIndex === vcTargetIndex) {
+    const targetWordRaw = vcCurrentTokens[vcTargetIndex];
+
+    if (tokenIndex === vcTargetIndex || vcWordsMatch(el.dataset.word, targetWordRaw)) {
         // Correct word chosen
         const display = document.getElementById("vc-verse-display");
 
         const correctEl = document.createElement("div");
         correctEl.className = "vc-word vc-correct";
-        correctEl.dataset.word = el.dataset.word;
-        correctEl.dataset.pinyin = el.dataset.pinyin;
+        correctEl.dataset.word = targetWordRaw;
+        
+        if (typeof pinyinPro !== 'undefined' && /[\u4e00-\u9fa5]/.test(targetWordRaw)) {
+            correctEl.dataset.pinyin = pinyinPro.pinyin(targetWordRaw, { type: 'string' });
+        } else {
+            correctEl.dataset.pinyin = el.dataset.pinyin || "";
+        }
+        
         display.appendChild(correctEl);
         // Auto-scroll the display area to always show the latest word
         display.scrollTop = display.scrollHeight;
