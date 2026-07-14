@@ -1,0 +1,215 @@
+{{ define "main" }}
+<link rel="stylesheet" href="/css/engagement-party-groupme.css">
+
+<div id="groupme-app">
+  <!-- Backdrop overlay for modal -->
+  <div class="modal-overlay" id="modal-overlay"></div>
+
+  <!-- The Simulated Event Creator Modal -->
+  <div class="event-modal" id="event-modal">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <h1 class="modal-title">New Event</h1>
+    </div>
+
+    <!-- Modal Body Content -->
+    <div class="modal-body">
+      <!-- Upper Section: Ring Image and Date/Time Fields -->
+      <div class="details-section">
+        <!-- Event Image Container with Crop Markings -->
+        <div class="event-photo-container">
+          <img src="/img/julie-engagement-party/engagement_ring.png" alt="I+J Engagement Ring" class="event-photo">
+          <div class="crop-ring-overlay"></div>
+          <div class="edit-photo-btn" title="Change event photo">
+            <i class="fas fa-pencil-alt"></i>
+          </div>
+        </div>
+
+        <!-- Meta Input Fields -->
+        <div class="event-meta-fields">
+          <!-- Event Title -->
+          <div class="field-container title-field">
+            <input type="text" class="modal-input text-white font-bold" value="I+J Engagement Party" readonly>
+          </div>
+          
+          <!-- Starts Datetime -->
+          <div class="datetime-row">
+            <span class="field-label">Starts</span>
+            <div class="datetime-inputs">
+              <input type="text" class="modal-input date-input" value="Jul 18, 2026" readonly>
+              <input type="text" class="modal-input time-input" value="10:00 AM" readonly>
+            </div>
+          </div>
+
+          <!-- Ends Datetime -->
+          <div class="datetime-row">
+            <span class="field-label">Ends</span>
+            <div class="datetime-inputs">
+              <input type="text" class="modal-input date-input" value="Jul 18, 2026" readonly>
+              <input type="text" class="modal-input time-input" value="11:30 AM" readonly>
+            </div>
+          </div>
+
+          <!-- All Day Toggle Row -->
+          <div class="allday-row">
+            <span class="allday-label">
+              <i class="fas fa-sun toggle-icon-sun"></i> All day
+            </span>
+            <label class="toggle-switch">
+              <input type="checkbox" disabled>
+              <span class="slider-round"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Middle Section: Location and Video Call Options -->
+      <div class="location-section">
+        <div class="field-container location-field">
+          <i class="fas fa-map-marker-alt location-marker-icon"></i>
+          <a href="https://maps.google.com/?q=709+SALISBURY+Dr,+Woodway,+TX+76712" target="_blank" class="location-link" title="Open in Google Maps">
+            <input type="text" class="modal-input location-input" value="709 SALISBURY Dr, Woodway, TX 76712" readonly>
+          </a>
+          <i class="fas fa-times clear-icon" title="Clear field"></i>
+        </div>
+        <div class="video-call-btn" title="Toggle video link">
+          <i class="fas fa-video video-icon"></i>
+          <span>Video ca...</span>
+        </div>
+      </div>
+
+      <!-- Description Block (Scrollable Area) -->
+      <div class="description-section">
+        <div class="description-scroll-pane">
+          <p class="desc-line">Timeline is Isaac proposes to Julie in Waco Wetlands at 9:20ish, then after photos will head to the party, with target arrival at 10:00 AM.</p>
+          <p class="desc-line">- If you would like to help decorate, show up at 9:30 AM</p>
+          <p class="desc-line">- Brunch provided. Let me know about allergies (<a href="tel:4342136703" class="phone-link" title="Call Isaac">434-213-6703</a>).</p>
+        </div>
+      </div>
+
+      <!-- Lower Section: Reminders -->
+      <div class="reminder-section">
+        <i class="far fa-bell bell-icon"></i>
+        <input type="text" class="modal-input reminder-input" value="Add a reminder" readonly>
+        <div class="reminder-chevrons">
+          <i class="fas fa-chevron-up"></i>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer Controls -->
+    <div class="modal-footer">
+      <button class="icon-circle-btn close-btn" id="close-modal-btn" title="Close and view background chat">
+        <i class="fas fa-times"></i>
+      </button>
+      <button class="send-event-btn" id="send-event-btn" title="Send event to group">
+        <i class="fas fa-paper-plane"></i> Send
+      </button>
+    </div>
+  </div>
+
+  <!-- THE PANIC EASTER EGG OVERLAY -->
+  <div class="panic-overlay" id="panic-overlay">
+    <div class="panic-card" id="panic-card">
+      <div class="panic-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <h2 class="panic-title">WHAT ARE YOU DOING!!!</h2>
+      <p class="panic-message">Julie is in that GroupMe!!!</p>
+      <button class="panic-close-btn" id="panic-close-btn">
+        <i class="fas fa-undo"></i> Oops! Cancel!
+      </button>
+    </div>
+  </div>
+
+  <!-- Simulated interactive elements overlaid on the background image -->
+  <!-- Clicking these "+" buttons on the backgrounds will re-open the event invitation modal -->
+  <button class="simulated-plus-trigger desktop-only" id="plus-desktop" title="Create / View Event"></button>
+  <button class="simulated-plus-trigger mobile-only" id="plus-mobile" title="Create / View Event"></button>
+
+  <!-- Floating action button to reopen invitation -->
+  <button class="reopen-invitation-fab" id="reopen-fab" title="View Invitation Details">
+    <i class="fas fa-envelope-open-text"></i>
+    <span>View Invitation</span>
+  </button>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('event-modal');
+    const overlay = document.getElementById('modal-overlay');
+    const closeBtn = document.getElementById('close-modal-btn');
+    const sendBtn = document.getElementById('send-event-btn');
+    const reopenFab = document.getElementById('reopen-fab');
+    
+    // Panic Easter Egg
+    const panicOverlay = document.getElementById('panic-overlay');
+    const panicCard = document.getElementById('panic-card');
+    const panicCloseBtn = document.getElementById('panic-close-btn');
+
+    // Simulated background triggers
+    const plusDesktop = document.getElementById('plus-desktop');
+    const plusMobile = document.getElementById('plus-mobile');
+
+    // Function to close the modal
+    function closeModal() {
+      modal.classList.add('hide');
+      overlay.classList.add('hide');
+      setTimeout(() => {
+        modal.style.display = 'none';
+        overlay.style.display = 'none';
+        reopenFab.classList.add('show');
+      }, 300);
+    }
+
+    // Function to open the modal
+    function openModal() {
+      reopenFab.classList.remove('show');
+      modal.style.display = 'flex';
+      overlay.style.display = 'block';
+      // Force reflow
+      modal.offsetHeight;
+      overlay.offsetHeight;
+      modal.classList.remove('hide');
+      overlay.classList.remove('hide');
+    }
+
+    // Close button click
+    closeBtn.addEventListener('click', closeModal);
+
+    // Reopen FAB click
+    reopenFab.addEventListener('click', openModal);
+
+    // Background Plus click
+    plusDesktop.addEventListener('click', openModal);
+    plusMobile.addEventListener('click', openModal);
+
+    // Send button triggers Panic Warning
+    sendBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      // Open the panic overlay
+      panicOverlay.style.display = 'flex';
+      panicOverlay.offsetHeight; // force reflow
+      panicOverlay.classList.add('show');
+
+      // Add a shake animation class
+      panicCard.classList.add('shake-anim');
+      
+      // Remove shake animation class after it completes so it can be re-triggered
+      setTimeout(() => {
+        panicCard.classList.remove('shake-anim');
+      }, 500);
+    });
+
+    // Close panic warning
+    panicCloseBtn.addEventListener('click', function() {
+      panicOverlay.classList.remove('show');
+      setTimeout(() => {
+        panicOverlay.style.display = 'none';
+      }, 300);
+    });
+  });
+</script>
+{{ end }}
