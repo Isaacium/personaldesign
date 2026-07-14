@@ -1,8 +1,8 @@
 ---
 title: "I+J Engagement Party"
 type: "page"
-layout: "julie-engagement-party"
-url: "/julie-engagement-party"
+layout: "engagement-party"
+url: "/j-faz-engagement-party"
 date: "2026-07-13"
 ---
 
