@@ -1,0 +1,218 @@
+/* Stylesheet for Julie & Isaac's Engagement Party (Academic Theme) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+:root {
+  --color-bg-academic: #faf7f2;
+  --color-accent-gold: #c5a059;
+  --color-accent-rosegold: #b76e79;
+  --color-accent-blush: #ffdcdb;
+  --color-text-main: #2c2a29;
+  --color-text-muted: #5c5957;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Page container */
+.academic-paper {
+  font-family: var(--font-sans);
+  color: var(--color-text-main);
+  background-color: var(--color-bg-academic);
+  max-width: 850px;
+  margin: 3rem auto;
+  padding: 3rem 4rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  line-height: 1.6;
+}
+
+/* Headings */
+.academic-paper h1.paper-title {
+  font-family: var(--font-serif);
+  font-size: 2.2rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  color: var(--color-text-main);
+  border-bottom: 2px double var(--color-accent-gold);
+  padding-bottom: 1.5rem;
+}
+
+.academic-paper .author-block {
+  text-align: center;
+  font-size: 1.1rem;
+  margin-top: 1rem;
+  font-weight: 500;
+}
+
+.academic-paper .author-block span.author {
+  margin: 0 0.75rem;
+}
+
+.academic-paper .author-block span.author sup {
+  color: var(--color-accent-rosegold);
+}
+
+.academic-paper .affiliations {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin-bottom: 2.5rem;
+  font-style: italic;
+}
+
+.academic-paper .affiliations p {
+  margin: 0.2rem 0;
+}
+
+/* Abstract box */
+.academic-paper .abstract-container {
+  border-top: 1px solid var(--color-accent-gold);
+  border-bottom: 1px solid var(--color-accent-gold);
+  padding: 1.5rem 0;
+  margin-bottom: 3rem;
+}
+
+.academic-paper .abstract-title {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  color: var(--color-text-main);
+}
+
+.academic-paper .abstract-content {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  text-align: justify;
+}
+
+/* Heading styles in document body */
+.academic-paper h2.section-heading {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  border-bottom: 1px solid var(--color-accent-gold);
+  padding-bottom: 0.4rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Figures and captions (Academic style) */
+.academic-paper figure.academic-figure {
+  margin: 2rem auto;
+  text-align: center;
+  background: white;
+  padding: 1.5rem;
+  border: 1px solid #e6dfd5;
+  border-radius: 6px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.academic-paper figure.academic-figure img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.academic-paper figure.academic-figure figcaption {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin-top: 1rem;
+  text-align: justify;
+  line-height: 1.4;
+  border-top: 1px solid #eee;
+  padding-top: 0.75rem;
+}
+
+.academic-paper figure.academic-figure figcaption strong {
+  color: var(--color-text-main);
+}
+
+/* Tables (booktabs LaTeX style: only horizontal borders, bold headings) */
+.academic-paper table.booktabs-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.academic-paper table.booktabs-table th {
+  font-weight: 600;
+  color: var(--color-text-main);
+  padding: 0.75rem 0.5rem;
+  border-top: 2px solid var(--color-text-main);
+  border-bottom: 1px solid var(--color-text-main);
+}
+
+.academic-paper table.booktabs-table td {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid #e6dfd5;
+  color: var(--color-text-muted);
+}
+
+.academic-paper table.booktabs-table tr:last-child td {
+  border-bottom: 2px solid var(--color-text-main);
+}
+
+.academic-paper table.booktabs-table th.time-col,
+.academic-paper table.booktabs-table td.time-col {
+  width: 15%;
+  font-weight: 600;
+  color: var(--color-accent-rosegold);
+}
+
+.academic-paper table.booktabs-table th.task-col,
+.academic-paper table.booktabs-table td.task-col {
+  width: 35%;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+/* Discussion and FAQ section */
+.academic-paper .faq-container {
+  margin-top: 2rem;
+}
+
+.academic-paper .faq-item {
+  background: white;
+  border: 1px solid #e6dfd5;
+  border-radius: 6px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.academic-paper .faq-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+}
+
+.academic-paper .faq-question {
+  font-weight: 600;
+  color: var(--color-text-main);
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.academic-paper .faq-answer {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .academic-paper {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  .academic-paper h1.paper-title {
+    font-size: 1.8rem;
+  }
+}
