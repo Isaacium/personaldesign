@@ -1,0 +1,407 @@
+{{ define "main" }}
+<!-- Include Canvas Confetti from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<!-- Link to custom styles -->
+<link rel="stylesheet" href="/css/engagement-party-connections.css?v=7">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+
+<div id="connections-app">
+  <div class="connections-header">
+    <h1>Connections</h1>
+    <p>Group words that share a common thread.</p>
+  </div>
+  
+  <div class="board-container">
+    <div id="solved-area"></div>
+    <div id="grid-area" class="grid"></div>
+  </div>
+  
+  <div class="mistakes-container">
+    <span>Mistakes remaining:</span>
+    <div id="mistakes-dots">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    </div>
+  </div>
+  
+  <div class="action-buttons">
+    <button id="btn-shuffle">Shuffle</button>
+    <button id="btn-deselect" disabled>Deselect All</button>
+    <button id="btn-submit" disabled>Submit</button>
+  </div>
+  
+  <div class="footer-actions">
+    <button id="btn-reveal-solution">Reveal Solution</button>
+  </div>
+  
+  <div id="toast" class="toast"></div>
+
+  <!-- Reopen Results Button (Visible after game completion) -->
+  <div id="reopen-results-container" style="display: none; margin-top: 20px;">
+    <button id="btn-reopen-results" class="reopen-btn">View Invitation & Results</button>
+  </div>
+
+  <!-- Results Screen & Invitation Modal -->
+  <div id="results-overlay" class="results-overlay">
+    <div class="results-card">
+      <button id="btn-close-results" class="close-btn" aria-label="Close">&times;</button>
+      
+      <div id="results-headline" class="results-headline">Perfect!</div>
+      <div class="results-subtitle">Connections</div>
+      
+      <!-- Guess history grid -->
+      <div id="results-grid" class="results-grid"></div>
+      
+      <div class="results-divider"></div>
+
+      <!-- Stationaty Style Invitation Card -->
+      <div class="invitation-card">
+        <div class="invite-tag">YOU'RE INVITED</div>
+        <div class="invite-title">Julie & Isaac's Engagement Party</div>
+        <div class="invite-line-divider"></div>
+        
+        <div class="invite-details">
+          <div class="invite-row">
+            <span class="invite-label">When</span>
+            <span class="invite-value">Saturday, July 18 • 10:00 AM</span>
+            <span class="invite-note">Isaac & Julie arrive at 10:00 AM.<br><strong>Arrive at 9:45 to Be Part of the Surprise</strong></span>
+          </div>
+          <div class="invite-row">
+            <span class="invite-label">What</span>
+            <span class="invite-value">Brunch Celebration</span>
+          </div>
+          <div class="invite-row">
+            <span class="invite-label">Where</span>
+            <span class="invite-value">
+              <a href="https://maps.google.com/?q=709+SALISBURY+Dr,+Woodway,+TX+76712" target="_blank" class="maps-link">
+                709 Salisbury Dr, Woodway, TX 76712
+              </a>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const CATEGORIES = [
+    {
+      id: "julie",
+      title: "JULIE",
+      class: "cat-julie",
+      words: ["PATIENT", "VIOLA", "GUT", "STAR WARS"]
+    },
+    {
+      id: "isaac",
+      title: "ISAAC",
+      class: "cat-isaac",
+      words: ["FRUGAL", "BICYCLE", "CHINESE CHURCH", "WIRE EDM"]
+    },
+    {
+      id: "engagement",
+      title: "ENGAGEMENT",
+      class: "cat-engagement",
+      words: ["RING", "COMMITMENT", "KNEE", "PHOTOGRAPHY"]
+    },
+    {
+      id: "party",
+      title: "PARTY",
+      class: "cat-party",
+      words: ["BRUNCH", "10:00 AM", "SATURDAY, JULY 18", "709 SALISBURY DR"]
+    }
+  ];
+
+  let words = [];
+  CATEGORIES.forEach(cat => {
+    cat.words.forEach(w => {
+      words.push({ word: w, category: cat.id });
+    });
+  });
+
+  let remainingWords = [...words];
+  let selectedWords = [];
+  let mistakes = 4;
+  let solvedCategories = [];
+  let guessHistory = [];
+  let gameOver = false;
+
+  const gridArea = document.getElementById("grid-area");
+  const solvedArea = document.getElementById("solved-area");
+  const btnShuffle = document.getElementById("btn-shuffle");
+  const btnDeselect = document.getElementById("btn-deselect");
+  const btnSubmit = document.getElementById("btn-submit");
+  const btnReveal = document.getElementById("btn-reveal-solution");
+  const dots = document.querySelectorAll(".dot");
+  const toast = document.getElementById("toast");
+  
+  const resultsOverlay = document.getElementById("results-overlay");
+  const resultsHeadline = document.getElementById("results-headline");
+  const resultsGrid = document.getElementById("results-grid");
+  const btnCloseResults = document.getElementById("btn-close-results");
+  const btnReopenResults = document.getElementById("btn-reopen-results");
+  const reopenContainer = document.getElementById("reopen-results-container");
+
+  function shuffle(array) {
+    let currentIndex = array.length, randomIndex;
+    while (currentIndex !== 0) {
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+      [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+    }
+    return array;
+  }
+
+  function renderGrid() {
+    gridArea.innerHTML = "";
+    remainingWords.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "word-tile";
+      div.textContent = item.word;
+      if (selectedWords.includes(item.word)) {
+        div.classList.add("selected");
+      }
+      div.addEventListener("click", () => toggleSelect(item.word));
+      gridArea.appendChild(div);
+    });
+    updateButtons();
+  }
+
+  function toggleSelect(word) {
+    if (gameOver) return;
+    const index = selectedWords.indexOf(word);
+    if (index > -1) {
+      selectedWords.splice(index, 1);
+    } else {
+      if (selectedWords.length < 4) {
+        selectedWords.push(word);
+      }
+    }
+    renderGrid();
+  }
+
+  function updateButtons() {
+    btnDeselect.disabled = selectedWords.length === 0;
+    btnSubmit.disabled = selectedWords.length !== 4;
+  }
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add("show");
+    setTimeout(() => {
+      toast.classList.remove("show");
+    }, 2000);
+  }
+
+  function renderSolvedCategory(catId) {
+    const cat = CATEGORIES.find(c => c.id === catId);
+    const div = document.createElement("div");
+    div.className = `solved-category ${cat.class}`;
+    div.innerHTML = `
+      <h3>${cat.title}</h3>
+      <p>${cat.words.join(", ")}</p>
+    `;
+    solvedArea.appendChild(div);
+  }
+
+  function rearrangeSolvedArea() {
+    solvedArea.innerHTML = "";
+    const targetOrder = ["julie", "isaac", "engagement", "party"];
+    targetOrder.forEach(catId => {
+      renderSolvedCategory(catId);
+    });
+  }
+
+  function triggerConfetti() {
+    if (typeof confetti !== "undefined") {
+      var duration = 3 * 1000;
+      var animationEnd = Date.now() + duration;
+      var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1100 };
+      var interval = setInterval(function() {
+        var timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) { return clearInterval(interval); }
+        var particleCount = 50 * (timeLeft / duration);
+        confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random(), y: Math.random() - 0.2 } }));
+      }, 250);
+    }
+  }
+
+  function showResults(didReveal = false) {
+    gameOver = true;
+    
+    // Hide game controls
+    document.querySelector(".action-buttons").style.display = "none";
+    document.querySelector(".mistakes-container").style.display = "none";
+    btnReveal.style.display = "none";
+    gridArea.style.display = "none";
+
+    // Show reopen button
+    reopenContainer.style.display = "block";
+
+    // Determine Headline
+    if (didReveal) {
+      resultsHeadline.textContent = "Revealed";
+    } else if (mistakes === 4) {
+      resultsHeadline.textContent = "Perfect!";
+    } else if (mistakes === 3) {
+      resultsHeadline.textContent = "Nice!";
+    } else if (mistakes === 2) {
+      resultsHeadline.textContent = "Great!";
+    } else if (mistakes === 1) {
+      resultsHeadline.textContent = "Whew!";
+    } else {
+      resultsHeadline.textContent = "Next Time!";
+    }
+
+    // Render guess history grid
+    resultsGrid.innerHTML = "";
+    guessHistory.forEach(guessRow => {
+      const rowDiv = document.createElement("div");
+      rowDiv.className = "results-grid-row";
+      guessRow.forEach(catId => {
+        const squareDiv = document.createElement("div");
+        squareDiv.className = `results-grid-square bg-${catId}`;
+        rowDiv.appendChild(squareDiv);
+      });
+      resultsGrid.appendChild(rowDiv);
+    });
+
+    // Show Results Overlay Modal
+    resultsOverlay.classList.add("show");
+
+    // Play Confetti on win
+    if (!didReveal && mistakes > 0) {
+      setTimeout(() => { triggerConfetti(); }, 300);
+    }
+  }
+
+  function revealSolution(didReveal = true) {
+    gameOver = true;
+    solvedCategories = ["julie", "isaac", "engagement", "party"];
+    remainingWords = [];
+    renderGrid();
+    
+    rearrangeSolvedArea();
+    
+    document.querySelector(".action-buttons").style.display = "none";
+    document.querySelector(".mistakes-container").style.display = "none";
+    btnReveal.style.display = "none";
+    gridArea.style.display = "none";
+
+    setTimeout(() => {
+      showResults(didReveal);
+    }, 1000);
+  }
+
+  btnShuffle.addEventListener("click", () => {
+    if (gameOver) return;
+    remainingWords = shuffle(remainingWords);
+    renderGrid();
+  });
+
+  btnDeselect.addEventListener("click", () => {
+    if (gameOver) return;
+    selectedWords = [];
+    renderGrid();
+  });
+
+  btnReveal.addEventListener("click", () => {
+    if (gameOver) return;
+    revealSolution(true);
+  });
+
+  btnCloseResults.addEventListener("click", () => {
+    resultsOverlay.classList.remove("show");
+  });
+
+  btnReopenResults.addEventListener("click", () => {
+    resultsOverlay.classList.add("show");
+  });
+
+  resultsOverlay.addEventListener("click", (e) => {
+    if (e.target === resultsOverlay) {
+      resultsOverlay.classList.remove("show");
+    }
+  });
+
+  btnSubmit.addEventListener("click", () => {
+    if (gameOver || selectedWords.length !== 4) return;
+    
+    const selectedItems = words.filter(w => selectedWords.includes(w.word));
+    
+    guessHistory.push(selectedItems.map(item => item.category));
+
+    const catCounts = {};
+    selectedItems.forEach(item => {
+      catCounts[item.category] = (catCounts[item.category] || 0) + 1;
+    });
+    
+    let isCorrect = false;
+    let isOneAway = false;
+    let winningCat = null;
+    
+    for (const [cat, count] of Object.entries(catCounts)) {
+      if (count === 4) {
+        isCorrect = true;
+        winningCat = cat;
+      } else if (count === 3) {
+        isOneAway = true;
+      }
+    }
+    
+    if (isCorrect) {
+      solvedCategories.push(winningCat);
+      remainingWords = remainingWords.filter(item => !selectedWords.includes(item.word));
+      selectedWords = [];
+      
+      renderSolvedCategory(winningCat);
+      renderGrid();
+      
+      if (solvedCategories.length === 4) {
+        gameOver = true;
+        document.querySelector(".action-buttons").style.display = "none";
+        document.querySelector(".mistakes-container").style.display = "none";
+        btnReveal.style.display = "none";
+
+        setTimeout(() => {
+          rearrangeSolvedArea();
+          setTimeout(() => {
+            showResults(false);
+          }, 1000);
+        }, 1000);
+      }
+    } else {
+      if (isOneAway) {
+        showToast("One away...");
+      } else {
+        showToast("Incorrect.");
+      }
+      
+      mistakes--;
+      if (mistakes >= 0 && mistakes < 4) {
+        dots[3 - mistakes].classList.add("lost");
+      }
+      
+      const tiles = document.querySelectorAll(".word-tile.selected");
+      tiles.forEach(t => {
+        t.classList.add("shake");
+        setTimeout(() => t.classList.remove("shake"), 400);
+      });
+      
+      if (mistakes === 0) {
+        setTimeout(() => {
+          showToast("Next time!");
+          setTimeout(() => {
+            revealSolution(false);
+          }, 1000);
+        }, 1000);
+      }
+    }
+  });
+
+  remainingWords = shuffle(remainingWords);
+  renderGrid();
+});
+</script>
+{{ end }}
