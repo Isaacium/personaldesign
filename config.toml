@@ -1,7 +1,6 @@
 baseurl = "https://i-liu.com/"
 title = "Isaac Liu"
 theme = "pulp"
-canonifyurls = true
 hasCJKLanguage = true
 # pygmentsCodefences = true
 # pygmentsUseClasses = true
