@@ -21,15 +21,20 @@ export async function onRequestGet({ env }) {
     // match keys: r1m0, r1m1, r1m2, r1m3, r2m0, r2m1, final
     const matchTallies = {};
 
+    let top8Seeds = null;
+
     results.forEach(row => {
       try {
         const data = typeof row.bracket_data === 'string' ? JSON.parse(row.bracket_data) : row.bracket_data;
         if (data && typeof data === 'object') {
+          if (!top8Seeds && Array.isArray(data.top8)) {
+            top8Seeds = data.top8;
+          }
           Object.keys(data).forEach(matchKey => {
+            if (matchKey === 'top8') return;
             const winner = data[matchKey];
             if (!winner) return;
 
-            // Handle object or string
             const winnerName = typeof winner === 'object' ? winner.name : winner;
 
             if (!matchTallies[matchKey]) {
@@ -66,6 +71,7 @@ export async function onRequestGet({ env }) {
 
     return new Response(JSON.stringify({
       total_brackets: results.length,
+      top8: top8Seeds,
       matchups: matchups
     }), {
       status: 200,

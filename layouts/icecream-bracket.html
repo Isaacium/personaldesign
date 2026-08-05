@@ -669,8 +669,16 @@ async function handleRsvpSubmit(e) {
   btnSubmit.disabled = true;
   btnSubmit.innerText = 'Submitting...';
 
+  const top8List = allFlavors.slice(0, 8).map(f => ({
+    name: f.name,
+    img: f.img || '',
+    isCustom: Boolean(f.isCustom),
+    customIcon: f.customIcon || '🍨'
+  }));
+
   // Format bracket payload mapping match keys
   const bracketPayload = {
+    top8: top8List,
     r1m0: bracketWinners['match-1'] ? bracketWinners['match-1'].name : null,
     r1m1: bracketWinners['match-2'] ? bracketWinners['match-2'].name : null,
     r1m2: bracketWinners['match-3'] ? bracketWinners['match-3'].name : null,
@@ -736,7 +744,7 @@ async function openCrowdModal() {
   const content = document.getElementById('crowd-bracket-content');
 
   modal.classList.add('active');
-  subtitle.innerText = 'Fetching community picks...';
+  subtitle.innerText = 'Fetching community predictions...';
   content.innerHTML = '<div style="text-align: center; color: #64748b; padding: 2rem;">Loading data from D1 database...</div>';
 
   try {
@@ -751,40 +759,180 @@ async function openCrowdModal() {
 
     subtitle.innerText = `Based on majority votes across ${data.total_brackets} guest bracket${data.total_brackets > 1 ? 's' : ''}!`;
 
-    const getPick = (key) => (data.matchups[key] && data.matchups[key].majorityWinner) ? data.matchups[key].majorityWinner : 'TBD';
-    const getVotes = (key) => (data.matchups[key]) ? `${data.matchups[key].totalVotes} votes` : '';
+    const currentUserPicks = {
+      r1m0: bracketWinners['match-1'] ? bracketWinners['match-1'].name : null,
+      r1m1: bracketWinners['match-2'] ? bracketWinners['match-2'].name : null,
+      r1m2: bracketWinners['match-3'] ? bracketWinners['match-3'].name : null,
+      r1m3: bracketWinners['match-4'] ? bracketWinners['match-4'].name : null,
+      r2m0: bracketWinners['match-5'] ? bracketWinners['match-5'].name : null,
+      r2m1: bracketWinners['match-6'] ? bracketWinners['match-6'].name : null,
+      final: bracketWinners['match-7'] ? bracketWinners['match-7'].name : null
+    };
 
-    content.innerHTML = `
-      <div style="display: flex; gap: 1rem; justify-content: space-between; min-width: 600px; text-align: center;">
-        <div style="flex: 1; background: #f8fafc; border-radius: 8px; padding: 1rem; border: 1px solid #e2e8f0;">
-          <h4 style="margin: 0 0 0.75rem 0; color: #475569;">Quarterfinal Winners</h4>
-          <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.9rem;">
-            <div style="background: white; padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;"><strong>Match 1:</strong> ${getPick('r1m0')}</div>
-            <div style="background: white; padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;"><strong>Match 2:</strong> ${getPick('r1m1')}</div>
-            <div style="background: white; padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;"><strong>Match 3:</strong> ${getPick('r1m2')}</div>
-            <div style="background: white; padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;"><strong>Match 4:</strong> ${getPick('r1m3')}</div>
-          </div>
-        </div>
-        <div style="flex: 1; background: #f1f5f9; border-radius: 8px; padding: 1rem; border: 1px solid #cbd5e1;">
-          <h4 style="margin: 0 0 0.75rem 0; color: #334155;">Semifinal Winners</h4>
-          <div style="display: flex; flex-direction: column; gap: 1rem; font-size: 0.9rem; margin-top: 1rem;">
-            <div style="background: white; padding: 0.75rem; border-radius: 6px; border: 1px solid #94a3b8;"><strong>SF 1:</strong> ${getPick('r2m0')}</div>
-            <div style="background: white; padding: 0.75rem; border-radius: 6px; border: 1px solid #94a3b8;"><strong>SF 2:</strong> ${getPick('r2m1')}</div>
-          </div>
-        </div>
-        <div style="flex: 1; background: #fef3c7; border-radius: 8px; padding: 1rem; border: 1px solid #f59e0b;">
-          <h4 style="margin: 0 0 0.75rem 0; color: #b45309;">👑 Crowd Favorite Champion</h4>
-          <div style="font-size: 1.2rem; font-weight: bold; color: #92400e; margin-top: 2rem;">
-            ${getPick('final')}
-          </div>
-          <div style="font-size: 0.85rem; color: #b45309; margin-top: 0.5rem;">${getVotes('final')}</div>
-        </div>
-      </div>
-    `;
+    const top8Seeds = data.top8 || allFlavors.slice(0, 8);
+    content.innerHTML = renderVisualBracketHtml(top8Seeds, data.matchups, currentUserPicks);
   } catch (err) {
     subtitle.innerText = 'Failed to load community predictions.';
     content.innerHTML = '<div style="text-align: center; color: #ef4444; padding: 2rem;">Error fetching data. Please try again.</div>';
   }
+}
+
+function renderVisualBracketHtml(top8List, communityMatchups, userPicks = null) {
+  const fallbackFlavors = [
+    { name: 'Butter Pecan' }, { name: 'Peanut Butter Cup' },
+    { name: 'Caramel Pecan Turtle' }, { name: 'Mint Chocolate Chip' },
+    { name: 'Coconut Almond' }, { name: 'Peaches & Vanilla' },
+    { name: 'Dulce De Leche' }, { name: 'Homemade Vanilla' }
+  ];
+
+  const seeds = (Array.isArray(top8List) && top8List.length >= 8) ? top8List : fallbackFlavors;
+
+  const getName = (item) => typeof item === 'object' && item ? item.name : (item || 'TBD');
+
+  const getCommWinner = (key) => {
+    if (!communityMatchups) return null;
+    const p = communityMatchups[key];
+    if (!p) return null;
+    return typeof p === 'object' ? (p.majorityWinner || p.name) : p;
+  };
+
+  const getUserPick = (key) => {
+    if (!userPicks) return null;
+    const p = userPicks[key];
+    if (!p) return null;
+    return typeof p === 'object' ? p.name : p;
+  };
+
+  const cR1M0 = getCommWinner('r1m0'), uR1M0 = getUserPick('r1m0');
+  const cR1M1 = getCommWinner('r1m1'), uR1M1 = getUserPick('r1m1');
+  const cR1M2 = getCommWinner('r1m2'), uR1M2 = getUserPick('r1m2');
+  const cR1M3 = getCommWinner('r1m3'), uR1M3 = getUserPick('r1m3');
+
+  const cR2M0 = getCommWinner('r2m0'), uR2M0 = getUserPick('r2m0');
+  const cR2M1 = getCommWinner('r2m1'), uR2M1 = getUserPick('r2m1');
+
+  const cFinal = getCommWinner('final'), uFinal = getUserPick('final');
+
+  const s1 = getName(seeds[0]), s8 = getName(seeds[7]);
+  const s4 = getName(seeds[3]), s5 = getName(seeds[4]);
+  const s3 = getName(seeds[2]), s6 = getName(seeds[5]);
+  const s2 = getName(seeds[1]), s7 = getName(seeds[6]);
+
+  const renderSlot = (name, commWinner, userPick, seedBadge = '') => {
+    if (!name || name === 'TBD') {
+      return `
+        <div style="padding: 0.45rem 0.6rem; border-radius: 6px; border: 1px dashed #cbd5e1; margin: 3px 0; font-size: 0.85rem; color: #94a3b8; background: white;">
+          TBD
+        </div>
+      `;
+    }
+
+    const isCommWin = commWinner && commWinner === name;
+    const isUserPick = userPick && userPick === name;
+
+    let style = 'background: white; border: 1px solid #cbd5e1; color: #334155;';
+    let badges = [];
+
+    if (seedBadge) {
+      badges.push(`<span style="font-size:0.7rem; background:#e2e8f0; color:#475569; padding:1px 5px; border-radius:4px; margin-right:4px;">${seedBadge}</span>`);
+    }
+
+    if (isCommWin && isUserPick) {
+      style = 'background: #dcfce7; border: 1.5px solid #16a34a; color: #15803d; font-weight: bold;';
+      badges.push(`<span style="font-size:0.7rem; background:#16a34a; color:white; padding:1px 5px; border-radius:4px;" title="Community Majority & Your Pick">👥 ⭐ Both</span>`);
+    } else if (isCommWin) {
+      style = 'background: #f0fdf4; border: 1px solid #22c55e; color: #166534; font-weight: bold;';
+      badges.push(`<span style="font-size:0.7rem; background:#dcfce7; color:#15803d; padding:1px 4px; border-radius:3px; border:1px solid #86efac;" title="Community Majority Winner">👥 ✓</span>`);
+    } else if (isUserPick) {
+      style = 'background: #eff6ff; border: 1px solid #3b82f6; color: #1d4ed8; font-weight: 500;';
+      badges.push(`<span style="font-size:0.7rem; background:#dbeafe; color:#1e40af; padding:1px 4px; border-radius:3px; border:1px solid #93c5fd;" title="Your Pick">⭐ You</span>`);
+    }
+
+    return `
+      <div style="padding: 0.4rem 0.5rem; border-radius: 6px; margin: 3px 0; font-size: 0.82rem; display: flex; align-items: center; justify-content: space-between; gap: 6px; ${style}">
+        <div style="display: flex; align-items: center; gap: 4px; min-width: 0; flex: 1;">
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${name}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 2px; flex-shrink: 0; white-space: nowrap;">
+          ${badges.join(' ')}
+        </div>
+      </div>
+    `;
+  };
+
+  return `
+    <div>
+      <div style="display: flex; justify-content: center; gap: 1.5rem; font-size: 0.8rem; color: #64748b; margin-bottom: 0.75rem; background: #ffffff; padding: 0.4rem; border-radius: 6px; border: 1px solid #e2e8f0; font-family: system-ui, -apple-system, sans-serif;">
+        <span><strong style="color: #166534;">👥 ✓</strong> Community Majority</span>
+        <span><strong style="color: #1d4ed8;">⭐ You</strong> Your Pick</span>
+        <span><strong style="color: #15803d;">👥 ⭐ Both</strong> Matches Both</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; min-width: 750px; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px solid #cbd5e1; font-family: system-ui, -apple-system, sans-serif;">
+        
+        <!-- Col 1: Quarterfinals -->
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <div style="font-weight: 700; text-align: center; font-size: 0.85rem; color: #475569; text-transform: uppercase; border-bottom: 2px solid #cbd5e1; padding-bottom: 0.35rem;">Quarterfinals</div>
+          
+          <div style="background: #f1f5f9; padding: 0.35rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+            ${renderSlot(s1, cR1M0, uR1M0, '#1')}
+            ${renderSlot(s8, cR1M0, uR1M0, '#8')}
+          </div>
+
+          <div style="background: #f1f5f9; padding: 0.35rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+            ${renderSlot(s4, cR1M1, uR1M1, '#4')}
+            ${renderSlot(s5, cR1M1, uR1M1, '#5')}
+          </div>
+
+          <div style="background: #f1f5f9; padding: 0.35rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+            ${renderSlot(s3, cR1M2, uR1M2, '#3')}
+            ${renderSlot(s6, cR1M2, uR1M2, '#6')}
+          </div>
+
+          <div style="background: #f1f5f9; padding: 0.35rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+            ${renderSlot(s2, cR1M3, uR1M3, '#2')}
+            ${renderSlot(s7, cR1M3, uR1M3, '#7')}
+          </div>
+        </div>
+
+        <!-- Col 2: Semifinals -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem; justify-content: space-around;">
+          <div style="font-weight: 700; text-align: center; font-size: 0.85rem; color: #475569; text-transform: uppercase; border-bottom: 2px solid #cbd5e1; padding-bottom: 0.35rem;">Semifinals</div>
+          
+          <div style="background: #f1f5f9; padding: 0.35rem; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 1rem;">
+            ${renderSlot(cR1M0 || uR1M0 || 'Winner QF1', cR2M0, uR2M0)}
+            ${renderSlot(cR1M1 || uR1M1 || 'Winner QF2', cR2M0, uR2M0)}
+          </div>
+
+          <div style="background: #f1f5f9; padding: 0.35rem; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 1rem;">
+            ${renderSlot(cR1M2 || uR1M2 || 'Winner QF3', cR2M1, uR2M1)}
+            ${renderSlot(cR1M3 || uR1M3 || 'Winner QF4', cR2M1, uR2M1)}
+          </div>
+        </div>
+
+        <!-- Col 3: Championship -->
+        <div style="display: flex; flex-direction: column; justify-content: center; gap: 1rem;">
+          <div style="font-weight: 700; text-align: center; font-size: 0.85rem; color: #475569; text-transform: uppercase; border-bottom: 2px solid #cbd5e1; padding-bottom: 0.35rem;">Championship</div>
+          
+          <div style="background: #f1f5f9; padding: 0.5rem; border-radius: 8px; border: 1px solid #cbd5e1;">
+            ${renderSlot(cR2M0 || uR2M0 || 'Winner SF1', cFinal, uFinal)}
+            ${renderSlot(cR2M1 || uR2M1 || 'Winner SF2', cFinal, uFinal)}
+          </div>
+        </div>
+
+        <!-- Col 4: Champion Podium -->
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 12px; padding: 1rem; text-align: center;">
+          <div style="font-size: 2.2rem;">👑</div>
+          <div style="font-size: 0.75rem; font-weight: 700; color: #b45309; text-transform: uppercase; margin-top: 0.25rem;">Community #1 Champion</div>
+          <div style="font-size: 1.1rem; font-weight: 800; color: #92400e; margin-top: 0.5rem; word-break: break-word;">
+            ${cFinal || 'TBD'}
+          </div>
+          ${uFinal ? `<div style="margin-top:0.5rem; font-size:0.75rem; background:#dbeafe; color:#1e40af; padding:2px 8px; border-radius:999px; border:1px solid #93c5fd;">⭐ Your Champion: ${uFinal}</div>` : ''}
+        </div>
+
+      </div>
+    </div>
+  `;
 }
 
 // Initialize on DOM load
