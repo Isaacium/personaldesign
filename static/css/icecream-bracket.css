@@ -441,6 +441,11 @@
 .invite-main-details {
   border-right: 2px dashed #e2e8f0;
   padding-right: 2rem;
+  text-align: left !important;
+}
+
+.invite-main-details * {
+  text-align: left !important;
 }
 
 @media (max-width: 850px) {
@@ -449,6 +454,7 @@
     border-bottom: 2px dashed #e2e8f0;
     padding-right: 0;
     padding-bottom: 2rem;
+    text-align: left !important;
   }
 }
 
@@ -458,6 +464,7 @@
   color: var(--chocolate-dark);
   margin: 0 0 1rem 0;
   line-height: 1.2;
+  text-align: left !important;
 }
 
 .invite-date-badge {
@@ -471,6 +478,7 @@
   border-radius: var(--radius-md);
   border: 2px solid #fde68a;
   margin-bottom: 1.5rem;
+  text-align: left !important;
 }
 
 .detail-row {
@@ -478,6 +486,7 @@
   align-items: flex-start;
   gap: 1rem;
   margin-bottom: 1.2rem;
+  text-align: left !important;
 }
 
 .detail-icon {
@@ -485,11 +494,16 @@
   line-height: 1;
 }
 
+.detail-text {
+  text-align: left !important;
+}
+
 .detail-text h4 {
   margin: 0 0 0.2rem 0;
   font-family: var(--font-heading);
   font-size: 1.15rem;
   color: var(--chocolate-dark);
+  text-align: left !important;
 }
 
 .detail-text p {
@@ -497,6 +511,7 @@
   color: var(--text-muted);
   font-size: 1rem;
   line-height: 1.45;
+  text-align: left !important;
 }
 
 /* Feature Winner Card inside Invite */

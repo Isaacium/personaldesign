@@ -23,15 +23,12 @@
         <button class="btn btn-accent" id="btn-add-custom-flavor">
           <span>✨ Add Custom Flavor</span>
         </button>
-        <button class="btn btn-secondary" id="btn-view-crowd">
-          <span>📊 Community Bracket</span>
+        <button class="btn btn-secondary" id="btn-show-invite">
+          <span>✉️ Show Invite & Community Bracket</span>
         </button>
         <button class="btn btn-secondary" id="btn-reset-bracket">
           <span>🔄 Reset Playoff Bracket</span>
         </button>
-        <a href="#invite-card" class="btn btn-secondary" id="btn-jump-invite" style="display: none;">
-          <span>✉️ View Invite</span>
-        </a>
       </div>
     </header>
 
@@ -120,31 +117,31 @@
       <div class="invite-ribbon">🎉 OFFICIAL INVITATION UNLOCKED 🎉</div>
 
       <div class="invite-grid">
-        <div class="invite-main-details">
-          <h2 class="invite-headline">Ice Cream & Board Game Night</h2>
-          <div class="invite-date-badge">📅 Saturday, August 8, 2026 • 7:00 PM</div>
+        <div class="invite-main-details" style="text-align: left !important;">
+          <h2 class="invite-headline" style="text-align: center !important;">Ice Cream & Game Night</h2>
+          <div class="invite-date-badge" style="display: table; margin: 0 auto 1.5rem auto; text-align: center !important;">📅 Saturday, August 8, 2026 • 7:00 PM</div>
 
-          <div class="detail-row">
+          <div class="detail-row" style="text-align: left !important;">
             <div class="detail-icon">📍</div>
-            <div class="detail-text">
-              <h4>Location & Venue</h4>
-              <p>Third floor of Baylor Research and Innovation Center (BRIC)</p>
+            <div class="detail-text" style="text-align: left !important;">
+              <h4 style="text-align: left !important;">Location</h4>
+              <p style="text-align: left !important;">Third floor Rooftop of Baylor Research and Innovation Center (BRIC)</p>
             </div>
           </div>
 
-          <div class="detail-row">
+          <div class="detail-row" style="text-align: left !important;">
             <div class="detail-icon">🍨</div>
-            <div class="detail-text">
-              <h4>The Sundae Bar</h4>
-              <p>Featuring all tournament flavors + whipped cream, hot fudge, caramel, crushed cookies, toasted nuts, and maraschino cherries!</p>
+            <div class="detail-text" style="text-align: left !important;">
+              <h4 style="text-align: left !important;">Icecream</h4>
+              <p style="text-align: left !important;">Featuring all tournament flavors. Bring any other flavors/snacks you want. Spoons and bowls provided.</p>
             </div>
           </div>
 
-          <div class="detail-row">
+          <div class="detail-row" style="text-align: left !important;">
             <div class="detail-icon">🎲</div>
-            <div class="detail-text">
-              <h4>Board Game Showdown</h4>
-              <p>Bring your favorite board games! We'll have Catan, Ticket to Ride, Codenames, Wingspan, and party games set up across multiple tables.</p>
+            <div class="detail-text" style="text-align: left !important;">
+              <h4 style="text-align: left !important;">Board and Card Games</h4>
+              <p style="text-align: left !important;">Bring your favorite games!</p>
             </div>
           </div>
         </div>
@@ -152,9 +149,9 @@
         <div>
           <!-- Champion Highlight Card -->
           <div class="winner-feature-card">
-            <div class="winner-feature-title">⭐ Your Chosen #1 Flavor Feature ⭐</div>
-            <div class="winner-feature-name" id="invite-winner-flavor-name">Homemade Vanilla</div>
-            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: var(--text-muted);">We'll make sure your winning flavor takes center stage at the sundae bar!</p>
+            <div class="winner-feature-title">⭐ Your Creamy Creations Champion! ⭐</div>
+            <div class="winner-feature-name" id="invite-winner-flavor-name">No Choice</div>
+            <p id="invite-winner-subheading" style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: var(--text-muted);">Boring! You didn't fill out a bracket</p>
           </div>
 
           <!-- Interactive D1 RSVP Form -->
@@ -290,7 +287,7 @@ const DEFAULT_FLAVORS = [
     img: "{{ .RelPermalink }}"
   },
   {{ else }}
-  { id: 'f1', name: 'Butter Pecan', img: 'butter-pecan.png' },
+  { id: 'f1', name: 'Crème Brûlée', img: 'Crème-Brûlée.png' },
   { id: 'f2', name: 'Peanut Butter Cup', img: 'peanut-butter-cup.png' },
   { id: 'f3', name: 'Caramel Pecan Turtle', img: 'caramel-pecan-turtle.png' },
   { id: 'f4', name: 'Mint Chocolate Chip', img: 'mint-chocolate-chip.png' },
@@ -398,11 +395,15 @@ function renderBracketTree() {
   const champImgBox = document.getElementById('champion-img-box');
   const champImg = document.getElementById('champion-img');
   const champIcon = document.getElementById('champion-custom-icon');
+  const winnerFlavorName = document.getElementById('invite-winner-flavor-name');
+  const winnerSubheading = document.getElementById('invite-winner-subheading');
 
   if (champ) {
     champDisplay.innerText = champ.name;
-    document.getElementById('invite-winner-flavor-name').innerText = champ.name;
-    document.getElementById('btn-jump-invite').style.display = 'inline-flex';
+    if (winnerFlavorName) winnerFlavorName.innerText = champ.name;
+    if (winnerSubheading) winnerSubheading.innerText = "We'll make sure your winning flavor takes center stage at the sundae bar!";
+    const btnJump = document.getElementById('btn-jump-invite');
+    if (btnJump) btnJump.style.display = 'inline-flex';
 
     champImgBox.style.display = 'flex';
     if (champ.isCustom) {
@@ -419,6 +420,8 @@ function renderBracketTree() {
   } else {
     champDisplay.innerText = '???';
     champImgBox.style.display = 'none';
+    if (winnerFlavorName) winnerFlavorName.innerText = 'No Choice';
+    if (winnerSubheading) winnerSubheading.innerText = "Boring! You didn't fill out a bracket";
   }
 }
 
@@ -646,7 +649,8 @@ document.getElementById('btn-reset-bracket').onclick = () => {
     'match-5': null, 'match-6': null, 'match-7': null
   };
   document.getElementById('invite-card').classList.remove('visible');
-  document.getElementById('btn-jump-invite').style.display = 'none';
+  const btnJump = document.getElementById('btn-jump-invite');
+  if (btnJump) btnJump.style.display = 'none';
   renderBracketTree();
 };
 
@@ -669,24 +673,27 @@ async function handleRsvpSubmit(e) {
   btnSubmit.disabled = true;
   btnSubmit.innerText = 'Submitting...';
 
-  const top8List = allFlavors.slice(0, 8).map(f => ({
-    name: f.name,
-    img: f.img || '',
-    isCustom: Boolean(f.isCustom),
-    customIcon: f.customIcon || '🍨'
-  }));
+  // Only attach bracket payload if bracket is filled out (champion selected)
+  let bracketPayload = null;
+  if (bracketWinners['match-7']) {
+    const top8List = allFlavors.slice(0, 8).map(f => ({
+      name: f.name,
+      img: f.img || '',
+      isCustom: Boolean(f.isCustom),
+      customIcon: f.customIcon || '🍨'
+    }));
 
-  // Format bracket payload mapping match keys
-  const bracketPayload = {
-    top8: top8List,
-    r1m0: bracketWinners['match-1'] ? bracketWinners['match-1'].name : null,
-    r1m1: bracketWinners['match-2'] ? bracketWinners['match-2'].name : null,
-    r1m2: bracketWinners['match-3'] ? bracketWinners['match-3'].name : null,
-    r1m3: bracketWinners['match-4'] ? bracketWinners['match-4'].name : null,
-    r2m0: bracketWinners['match-5'] ? bracketWinners['match-5'].name : null,
-    r2m1: bracketWinners['match-6'] ? bracketWinners['match-6'].name : null,
-    final: bracketWinners['match-7'] ? bracketWinners['match-7'].name : null
-  };
+    bracketPayload = {
+      top8: top8List,
+      r1m0: bracketWinners['match-1'] ? bracketWinners['match-1'].name : null,
+      r1m1: bracketWinners['match-2'] ? bracketWinners['match-2'].name : null,
+      r1m2: bracketWinners['match-3'] ? bracketWinners['match-3'].name : null,
+      r1m3: bracketWinners['match-4'] ? bracketWinners['match-4'].name : null,
+      r2m0: bracketWinners['match-5'] ? bracketWinners['match-5'].name : null,
+      r2m1: bracketWinners['match-6'] ? bracketWinners['match-6'].name : null,
+      final: bracketWinners['match-7'] ? bracketWinners['match-7'].name : null
+    };
+  }
 
   try {
     const res = await fetch('/api/rsvp', {
@@ -728,13 +735,24 @@ async function handleRsvpSubmit(e) {
   }
 }
 
-// Community Bracket Modal Handler
+// Community Bracket & Invite Modal Handler
 function setupCrowdModal() {
   const modal = document.getElementById('modal-crowd-bracket');
-  const btnOpen = document.getElementById('btn-view-crowd');
+  const btnShowInvite = document.getElementById('btn-show-invite');
   const btnClose = document.getElementById('btn-close-crowd-modal');
 
-  if (btnOpen) btnOpen.onclick = openCrowdModal;
+  if (btnShowInvite) {
+    btnShowInvite.onclick = () => {
+      const inviteSec = document.getElementById('invite-card');
+      if (inviteSec) {
+        inviteSec.classList.add('visible');
+        setTimeout(() => {
+          inviteSec.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+      }
+      openCrowdModal();
+    };
+  }
   if (btnClose) btnClose.onclick = () => modal.classList.remove('active');
 }
 
@@ -779,7 +797,7 @@ async function openCrowdModal() {
 
 function renderVisualBracketHtml(top8List, communityMatchups, userPicks = null) {
   const fallbackFlavors = [
-    { name: 'Butter Pecan' }, { name: 'Peanut Butter Cup' },
+    { name: 'Crème Brûlée' }, { name: 'Peanut Butter Cup' },
     { name: 'Caramel Pecan Turtle' }, { name: 'Mint Chocolate Chip' },
     { name: 'Coconut Almond' }, { name: 'Peaches & Vanilla' },
     { name: 'Dulce De Leche' }, { name: 'Homemade Vanilla' }

@@ -1,5 +1,5 @@
 ---
-title: "Ice Cream & Board Games Bracket Showdown"
+title: "Ice Cream Games Night"
 type: "page"
 layout: "icecream-bracket"
 url: "/icecream-game-night"
