@@ -1,0 +1,798 @@
+{{ define "main" }}
+<link rel="stylesheet" href="/css/icecream-bracket.css">
+
+<canvas id="confetti-canvas"></canvas>
+
+<div class="icecream-invite-page">
+  <div class="page-container">
+
+    <!-- Page Header -->
+    <header class="hero-header">
+      <div class="hero-badge">
+        <span>🍦 Official Event Invite & Tournament</span>
+      </div>
+      <h1 class="hero-title">{{ .Title }}</h1>
+      <p class="hero-subtitle">
+        Top 8 seeds make the playoff bracket! Click any flavor in the bracket below to vote and advance it to crown your ultimate champion flavor for <strong>Saturday, August 8, 2026</strong>.
+      </p>
+      
+      <div class="header-actions">
+        <button class="btn btn-primary" id="btn-open-seeding">
+          <span>⚙️ Adjust Seeding</span>
+        </button>
+        <button class="btn btn-accent" id="btn-add-custom-flavor">
+          <span>✨ Add Custom Flavor</span>
+        </button>
+        <button class="btn btn-secondary" id="btn-view-crowd">
+          <span>📊 Community Bracket</span>
+        </button>
+        <button class="btn btn-secondary" id="btn-reset-bracket">
+          <span>🔄 Reset Playoff Bracket</span>
+        </button>
+        <a href="#invite-card" class="btn btn-secondary" id="btn-jump-invite" style="display: none;">
+          <span>✉️ View Invite</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Large Interactive Visual Bracket Tree -->
+    <section class="bracket-section">
+      <div class="bracket-container-wrapper">
+        <div class="bracket-tree">
+
+          <!-- Column 1: Quarterfinals -->
+          <div class="bracket-column">
+            <div class="round-header">Quarterfinals</div>
+            
+            <!-- Match 1 (#1 vs #8) -->
+            <div class="bracket-match-node" id="node-match-1">
+              <div class="bracket-slot" id="slot-m1-0" onclick="selectSlotWinner('match-1', 0)"></div>
+              <div class="bracket-slot" id="slot-m1-1" onclick="selectSlotWinner('match-1', 1)"></div>
+            </div>
+
+            <!-- Match 2 (#4 vs #5) -->
+            <div class="bracket-match-node" id="node-match-2">
+              <div class="bracket-slot" id="slot-m2-0" onclick="selectSlotWinner('match-2', 0)"></div>
+              <div class="bracket-slot" id="slot-m2-1" onclick="selectSlotWinner('match-2', 1)"></div>
+            </div>
+
+            <!-- Match 3 (#3 vs #6) -->
+            <div class="bracket-match-node" id="node-match-3">
+              <div class="bracket-slot" id="slot-m3-0" onclick="selectSlotWinner('match-3', 0)"></div>
+              <div class="bracket-slot" id="slot-m3-1" onclick="selectSlotWinner('match-3', 1)"></div>
+            </div>
+
+            <!-- Match 4 (#2 vs #7) -->
+            <div class="bracket-match-node" id="node-match-4">
+              <div class="bracket-slot" id="slot-m4-0" onclick="selectSlotWinner('match-4', 0)"></div>
+              <div class="bracket-slot" id="slot-m4-1" onclick="selectSlotWinner('match-4', 1)"></div>
+            </div>
+          </div>
+
+          <!-- Column 2: Semifinals -->
+          <div class="bracket-column">
+            <div class="round-header">Semifinals</div>
+
+            <!-- Match 5 -->
+            <div class="bracket-match-node" id="node-match-5">
+              <div class="bracket-slot" id="slot-m5-0" onclick="selectSlotWinner('match-5', 0)"></div>
+              <div class="bracket-slot" id="slot-m5-1" onclick="selectSlotWinner('match-5', 1)"></div>
+            </div>
+
+            <!-- Match 6 -->
+            <div class="bracket-match-node" id="node-match-6">
+              <div class="bracket-slot" id="slot-m6-0" onclick="selectSlotWinner('match-6', 0)"></div>
+              <div class="bracket-slot" id="slot-m6-1" onclick="selectSlotWinner('match-6', 1)"></div>
+            </div>
+          </div>
+
+          <!-- Column 3: Championship Final -->
+          <div class="bracket-column">
+            <div class="round-header">Championship</div>
+
+            <!-- Match 7 -->
+            <div class="bracket-match-node" id="node-match-7">
+              <div class="bracket-slot" id="slot-m7-0" onclick="selectSlotWinner('match-7', 0)"></div>
+              <div class="bracket-slot" id="slot-m7-1" onclick="selectSlotWinner('match-7', 1)"></div>
+            </div>
+          </div>
+
+          <!-- Column 4: Champion Podium -->
+          <div class="bracket-column" style="flex: 0 0 230px;">
+            <div class="round-header" style="background: #fef3c7; border-color: #f59e0b; color: #b45309;">Champion</div>
+            <div class="champion-box">
+              <div class="champion-crown">👑</div>
+              <div class="champion-title-text">Flavor of the Night</div>
+              <div class="champion-img-container" id="champion-img-box" style="display: none;">
+                <img src="" alt="" id="champion-img">
+                <span id="champion-custom-icon" style="font-size: 3rem; display: none;">🍨</span>
+              </div>
+              <div class="champion-name" id="champion-display-name">???</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Unveiled Event Invitation Section -->
+    <section class="invite-section" id="invite-card">
+      <div class="invite-ribbon">🎉 OFFICIAL INVITATION UNLOCKED 🎉</div>
+
+      <div class="invite-grid">
+        <div class="invite-main-details">
+          <h2 class="invite-headline">Ice Cream & Board Game Night</h2>
+          <div class="invite-date-badge">📅 Saturday, August 8, 2026 • 7:00 PM</div>
+
+          <div class="detail-row">
+            <div class="detail-icon">📍</div>
+            <div class="detail-text">
+              <h4>Location & Venue</h4>
+              <p>Third floor of Baylor Research and Innovation Center (BRIC)</p>
+            </div>
+          </div>
+
+          <div class="detail-row">
+            <div class="detail-icon">🍨</div>
+            <div class="detail-text">
+              <h4>The Sundae Bar</h4>
+              <p>Featuring all tournament flavors + whipped cream, hot fudge, caramel, crushed cookies, toasted nuts, and maraschino cherries!</p>
+            </div>
+          </div>
+
+          <div class="detail-row">
+            <div class="detail-icon">🎲</div>
+            <div class="detail-text">
+              <h4>Board Game Showdown</h4>
+              <p>Bring your favorite board games! We'll have Catan, Ticket to Ride, Codenames, Wingspan, and party games set up across multiple tables.</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <!-- Champion Highlight Card -->
+          <div class="winner-feature-card">
+            <div class="winner-feature-title">⭐ Your Chosen #1 Flavor Feature ⭐</div>
+            <div class="winner-feature-name" id="invite-winner-flavor-name">Homemade Vanilla</div>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: var(--text-muted);">We'll make sure your winning flavor takes center stage at the sundae bar!</p>
+          </div>
+
+          <!-- Interactive D1 RSVP Form -->
+          <div style="background: #f8fafc; border-radius: var(--radius-lg); padding: 1.5rem; border: 1px solid #e2e8f0;" id="rsvp-form-container">
+            <h4 style="margin: 0 0 0.5rem 0; font-family: var(--font-heading); color: var(--chocolate-dark);">RSVP & Submit Your Bracket</h4>
+            <p style="margin: 0 0 1rem 0; font-size: 0.9rem; color: var(--text-muted);">Enter your details to confirm attendance and submit your bracket to the community pool!</p>
+            
+            <form id="rsvp-form" onsubmit="handleRsvpSubmit(event)">
+              <div style="margin-bottom: 0.75rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">Your Full Name *</label>
+                <input type="text" id="rsvp-name" required placeholder="e.g. Isaac Liu" style="width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
+              </div>
+
+              <div style="margin-bottom: 0.75rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">Email Address *</label>
+                <input type="email" id="rsvp-email" required placeholder="e.g. isaac@example.com" style="width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box;">
+              </div>
+
+              <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">Will you be attending? *</label>
+                <select id="rsvp-attending" style="width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box; background: white;">
+                  <option value="1">🍦 Yes, I'll be there!</option>
+                  <option value="0">😢 Sorry, I can't make it</option>
+                </select>
+              </div>
+
+              <button type="submit" class="btn btn-primary" id="btn-submit-rsvp" style="width: 100%; box-sizing: border-box;">
+                <span>✨ Submit RSVP & Bracket</span>
+              </button>
+            </form>
+
+            <div id="rsvp-status-msg" style="display: none; margin-top: 1rem; padding: 0.75rem; border-radius: 6px; text-align: center; font-size: 0.9rem;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="invite-print-footer">
+        <button class="btn btn-accent" id="btn-print-bracket">
+          <span>🖨️ Print Completed Bracket & Invite</span>
+        </button>
+        <button class="btn btn-secondary" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+          <span>⬆️ Back to Top</span>
+        </button>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- Modal 1: Manage Tournament Seeding -->
+<div class="modal-overlay" id="modal-seeding">
+  <div class="modal-card">
+    <h3 class="modal-title">⚙️ Manage Flavor Seeding & Rankings</h3>
+    <p class="modal-subtitle">Re-order seeds below. The <strong>Top 8 flavors</strong> qualify for the Playoff Bracket!</p>
+
+    <div class="seeding-list" id="seeding-list-container">
+      <!-- Dynamically populated via JS -->
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
+      <button class="btn btn-secondary" id="btn-shuffle-seeds" style="font-size: 0.9rem;">🔀 Randomize Seeds</button>
+      <div style="display: flex; gap: 0.75rem;">
+        <button class="btn btn-secondary" id="btn-close-seeding">Cancel</button>
+        <button class="btn btn-primary" id="btn-apply-seeding">Apply Seeding 🏆</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 2: Add Custom Flavor -->
+<div class="modal-overlay" id="modal-custom-flavor">
+  <div class="modal-card">
+    <h3 class="modal-title">✨ Create Custom Ice Cream Flavor</h3>
+    <p class="modal-subtitle">Add your own flavor creation to enter the seeding pool!</p>
+
+    <div class="form-group">
+      <label class="form-label" for="input-flavor-name">Flavor Name</label>
+      <input type="text" class="form-input" id="input-flavor-name" placeholder="e.g. Salted Caramel Cookie Crunch" maxlength="35">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Pick Scoop Emoji / Avatar</label>
+      <div class="icon-picker-row" id="icon-picker">
+        <div class="icon-option selected" data-icon="🍨">🍨</div>
+        <div class="icon-option" data-icon="🍦">🍦</div>
+        <div class="icon-option" data-icon="🍓">🍓</div>
+        <div class="icon-option" data-icon="🍫">🍫</div>
+        <div class="icon-option" data-icon="🍪">🍪</div>
+        <div class="icon-option" data-icon="🥜">🥜</div>
+        <div class="icon-option" data-icon="🥭">🥭</div>
+        <div class="icon-option" data-icon="🦄">🦄</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="select-seed-position">Assign Seed Rank</label>
+      <select class="form-input" id="select-seed-position">
+        <option value="top">#1 Seed (Top Seed)</option>
+        <option value="bottom">Bottom Seed (Top 8 Cutoff)</option>
+      </select>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+      <button class="btn btn-secondary" id="btn-cancel-modal">Cancel</button>
+      <button class="btn btn-primary" id="btn-submit-custom-flavor">Add Flavor 🍦</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 3: Community Bracket Overlay -->
+<div class="modal-overlay" id="modal-crowd-bracket">
+  <div class="modal-card" style="max-width: 750px; width: 95%;">
+    <h3 class="modal-title">📊 Community Majority Bracket</h3>
+    <p class="modal-subtitle" id="crowd-subtitle">Loading community predictions...</p>
+
+    <div id="crowd-bracket-content" style="min-height: 200px;">
+      <!-- Dynamically populated via JS -->
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+      <button class="btn btn-secondary" id="btn-close-crowd-modal">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Dynamic page resource binding for 8 images in content/invites/icecream-game-night-8-8-26/
+const DEFAULT_FLAVORS = [
+  {{ range .Resources.Match "*.png" }}
+  {
+    id: "{{ .Name }}",
+    name: "{{ (strings.TrimSuffix ".png" .Name) | replaceRE "-" " " | title }}",
+    img: "{{ .RelPermalink }}"
+  },
+  {{ else }}
+  { id: 'f1', name: 'Butter Pecan', img: 'butter-pecan.png' },
+  { id: 'f2', name: 'Peanut Butter Cup', img: 'peanut-butter-cup.png' },
+  { id: 'f3', name: 'Caramel Pecan Turtle', img: 'caramel-pecan-turtle.png' },
+  { id: 'f4', name: 'Mint Chocolate Chip', img: 'mint-chocolate-chip.png' },
+  { id: 'f5', name: 'Coconut Almond', img: 'coconut-almond.png' },
+  { id: 'f6', name: 'Peaches & Homemade Vanilla', img: 'peaches-&-homemade-vanilla.png' },
+  { id: 'f7', name: 'Dulce De Leche', img: 'dulce-de-leche.png' },
+  { id: 'f8', name: 'Homemade Vanilla', img: 'homemade-vanilla.png' }
+  {{ end }}
+];
+
+// Ordered seeds array (Rank 1 to N)
+let allFlavors = JSON.parse(JSON.stringify(DEFAULT_FLAVORS));
+let draftSeeding = JSON.parse(JSON.stringify(allFlavors));
+
+// Playoff Bracket Winners state (Match 1..7)
+let bracketWinners = {
+  'match-1': null,
+  'match-2': null,
+  'match-3': null,
+  'match-4': null,
+  'match-5': null,
+  'match-6': null,
+  'match-7': null
+};
+
+let selectedIcon = '🍨';
+
+// Match configuration mapping for Top 8 Playoff Bracket
+// Quarterfinals:
+// Match 1: Seed 1 vs Seed 8
+// Match 2: Seed 4 vs Seed 5
+// Match 3: Seed 3 vs Seed 6
+// Match 4: Seed 2 vs Seed 7
+function getMatchCompetitors(matchId) {
+  const top8 = allFlavors.slice(0, 8);
+  switch(matchId) {
+    case 'match-1': return [top8[0], top8[7], 1, 8];
+    case 'match-2': return [top8[3], top8[4], 4, 5];
+    case 'match-3': return [top8[2], top8[5], 3, 6];
+    case 'match-4': return [top8[1], top8[6], 2, 7];
+    case 'match-5': return [bracketWinners['match-1'], bracketWinners['match-2']];
+    case 'match-6': return [bracketWinners['match-3'], bracketWinners['match-4']];
+    case 'match-7': return [bracketWinners['match-5'], bracketWinners['match-6']];
+    default: return [null, null];
+  }
+}
+
+function selectSlotWinner(matchId, slotIndex) {
+  const comps = getMatchCompetitors(matchId);
+  const chosen = slotIndex === 0 ? comps[0] : comps[1];
+  if (!chosen) return;
+
+  bracketWinners[matchId] = chosen;
+
+  // Invalidate downstream dependent matches if winner changed
+  if (matchId === 'match-1' || matchId === 'match-2') {
+    if (bracketWinners['match-5'] && bracketWinners['match-5'].id !== comps[0].id && bracketWinners['match-5'].id !== comps[1].id) {
+      bracketWinners['match-5'] = null;
+      bracketWinners['match-7'] = null;
+    }
+  }
+  if (matchId === 'match-3' || matchId === 'match-4') {
+    if (bracketWinners['match-6'] && bracketWinners['match-6'].id !== comps[0].id && bracketWinners['match-6'].id !== comps[1].id) {
+      bracketWinners['match-6'] = null;
+      bracketWinners['match-7'] = null;
+    }
+  }
+
+  renderBracketTree();
+}
+
+function renderBracketTree() {
+  const qf1 = getMatchCompetitors('match-1');
+  const qf2 = getMatchCompetitors('match-2');
+  const qf3 = getMatchCompetitors('match-3');
+  const qf4 = getMatchCompetitors('match-4');
+
+  // QF 1..4
+  renderSlot('slot-m1-0', qf1[0], bracketWinners['match-1'], `Seed #${qf1[2]}`);
+  renderSlot('slot-m1-1', qf1[1], bracketWinners['match-1'], `Seed #${qf1[3]}`);
+
+  renderSlot('slot-m2-0', qf2[0], bracketWinners['match-2'], `Seed #${qf2[2]}`);
+  renderSlot('slot-m2-1', qf2[1], bracketWinners['match-2'], `Seed #${qf2[3]}`);
+
+  renderSlot('slot-m3-0', qf3[0], bracketWinners['match-3'], `Seed #${qf3[2]}`);
+  renderSlot('slot-m3-1', qf3[1], bracketWinners['match-3'], `Seed #${qf3[3]}`);
+
+  renderSlot('slot-m4-0', qf4[0], bracketWinners['match-4'], `Seed #${qf4[2]}`);
+  renderSlot('slot-m4-1', qf4[1], bracketWinners['match-4'], `Seed #${qf4[3]}`);
+
+  // SF 5..6
+  renderSlot('slot-m5-0', bracketWinners['match-1'], bracketWinners['match-5'], 'Winner QF 1');
+  renderSlot('slot-m5-1', bracketWinners['match-2'], bracketWinners['match-5'], 'Winner QF 2');
+
+  renderSlot('slot-m6-0', bracketWinners['match-3'], bracketWinners['match-6'], 'Winner QF 3');
+  renderSlot('slot-m6-1', bracketWinners['match-4'], bracketWinners['match-6'], 'Winner QF 4');
+
+  // Final 7
+  renderSlot('slot-m7-0', bracketWinners['match-5'], bracketWinners['match-7'], 'Winner SF 1');
+  renderSlot('slot-m7-1', bracketWinners['match-6'], bracketWinners['match-7'], 'Winner SF 2');
+
+  // Champion
+  const champ = bracketWinners['match-7'];
+  const champDisplay = document.getElementById('champion-display-name');
+  const champImgBox = document.getElementById('champion-img-box');
+  const champImg = document.getElementById('champion-img');
+  const champIcon = document.getElementById('champion-custom-icon');
+
+  if (champ) {
+    champDisplay.innerText = champ.name;
+    document.getElementById('invite-winner-flavor-name').innerText = champ.name;
+    document.getElementById('btn-jump-invite').style.display = 'inline-flex';
+
+    champImgBox.style.display = 'flex';
+    if (champ.isCustom) {
+      champImg.style.display = 'none';
+      champIcon.style.display = 'inline-block';
+      champIcon.innerText = champ.customIcon || '🍨';
+    } else {
+      champImg.style.display = 'block';
+      champImg.src = champ.img;
+      champIcon.style.display = 'none';
+    }
+
+    triggerInviteReveal();
+  } else {
+    champDisplay.innerText = '???';
+    champImgBox.style.display = 'none';
+  }
+}
+
+function renderSlot(slotId, comp, winnerComp, seedOrFallback = '') {
+  const el = document.getElementById(slotId);
+  if (!el) return;
+
+  if (comp) {
+    const isWinner = winnerComp && winnerComp.id === comp.id;
+    el.className = `bracket-slot ${isWinner ? 'is-winner' : ''}`;
+    
+    const iconHtml = comp.isCustom
+      ? `<div class="bracket-slot-img-wrapper"><span class="bracket-slot-custom-icon">${comp.customIcon || '🍨'}</span></div>`
+      : `<div class="bracket-slot-img-wrapper"><img src="${comp.img}" alt="${comp.name}" class="bracket-slot-img"></div>`;
+
+    const badgeText = isWinner ? '✓ Winner' : 'Vote 🍨';
+    const seedTag = seedOrFallback.startsWith('Seed') ? `<span class="seed-number-badge">${seedOrFallback}</span>` : '';
+
+    el.innerHTML = `
+      ${seedTag}
+      ${iconHtml}
+      <div class="bracket-slot-info">
+        <span class="bracket-slot-name">${comp.name}</span>
+      </div>
+      <button class="vote-badge-btn">${badgeText}</button>
+    `;
+  } else {
+    el.className = 'bracket-slot';
+    el.innerHTML = `<span class="bracket-slot-empty">${seedOrFallback}</span>`;
+  }
+}
+
+// Seeding Modal Logic
+function setupSeedingModal() {
+  const modal = document.getElementById('modal-seeding');
+  const btnOpen = document.getElementById('btn-open-seeding');
+  const btnClose = document.getElementById('btn-close-seeding');
+  const btnApply = document.getElementById('btn-apply-seeding');
+  const btnShuffle = document.getElementById('btn-shuffle-seeds');
+
+  btnOpen.onclick = () => {
+    draftSeeding = JSON.parse(JSON.stringify(allFlavors));
+    renderSeedingList();
+    modal.classList.add('active');
+  };
+
+  btnClose.onclick = () => modal.classList.remove('active');
+
+  btnShuffle.onclick = () => {
+    for (let i = draftSeeding.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [draftSeeding[i], draftSeeding[j]] = [draftSeeding[j], draftSeeding[i]];
+    }
+    renderSeedingList();
+  };
+
+  btnApply.onclick = () => {
+    allFlavors = JSON.parse(JSON.stringify(draftSeeding));
+    // Reset playoff bracket state
+    bracketWinners = {
+      'match-1': null, 'match-2': null, 'match-3': null, 'match-4': null,
+      'match-5': null, 'match-6': null, 'match-7': null
+    };
+    document.getElementById('invite-card').classList.remove('visible');
+    modal.classList.remove('active');
+    renderBracketTree();
+  };
+}
+
+function moveSeed(index, direction) {
+  const targetIndex = index + direction;
+  if (targetIndex < 0 || targetIndex >= draftSeeding.length) return;
+  [draftSeeding[index], draftSeeding[targetIndex]] = [draftSeeding[targetIndex], draftSeeding[index]];
+  renderSeedingList();
+}
+
+function renderSeedingList() {
+  const container = document.getElementById('seeding-list-container');
+  let html = '';
+
+  draftSeeding.forEach((flavor, idx) => {
+    const isPlayoff = idx < 8;
+    
+    if (idx === 8) {
+      html += `
+        <div class="cutoff-divider">
+          <span>⛔ Top 8 Playoff Cutoff Line ⛔</span>
+        </div>
+      `;
+    }
+
+    const imgHtml = flavor.isCustom
+      ? `<span style="font-size: 1.6rem; width: 36px; text-align: center;">${flavor.customIcon || '🍨'}</span>`
+      : `<img src="${flavor.img}" alt="" class="seeding-img-thumb">`;
+
+    html += `
+      <div class="seeding-item ${isPlayoff ? 'in-playoffs' : 'cutoff-bubble'}">
+        <span class="seed-rank-badge">#${idx + 1}</span>
+        ${imgHtml}
+        <span class="seeding-item-name">${flavor.name} ${flavor.isCustom ? '✨' : ''}</span>
+        <div class="seeding-controls">
+          <button class="btn-move" onclick="moveSeed(${idx}, -1)" ${idx === 0 ? 'disabled style="opacity:0.3"' : ''}>⬆️</button>
+          <button class="btn-move" onclick="moveSeed(${idx}, 1)" ${idx === draftSeeding.length - 1 ? 'disabled style="opacity:0.3"' : ''}>⬇️</button>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function triggerInviteReveal() {
+  const inviteSec = document.getElementById('invite-card');
+  if (!inviteSec.classList.contains('visible')) {
+    inviteSec.classList.add('visible');
+    launchConfetti();
+    setTimeout(() => {
+      inviteSec.scrollIntoView({ behavior: 'smooth' });
+    }, 400);
+  }
+}
+
+// Confetti Effect
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = [];
+  const colors = ['#ff6b8b', '#f59e0b', '#10b981', '#8b5cf6', '#3b82f6', '#ec4899'];
+
+  for (let i = 0; i < 90; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height - canvas.height,
+      size: Math.random() * 8 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vy: Math.random() * 4 + 2,
+      vx: Math.random() * 2 - 1,
+      rot: Math.random() * 360
+    });
+  }
+
+  let animationFrame;
+  function update() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let activeCount = 0;
+    particles.forEach(p => {
+      p.y += p.vy;
+      p.x += p.vx;
+      p.rot += 3;
+      if (p.y < canvas.height) activeCount++;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rot * Math.PI) / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+      ctx.restore();
+    });
+
+    if (activeCount > 0) {
+      animationFrame = requestAnimationFrame(update);
+    }
+  }
+  update();
+}
+
+// Custom Flavor Modal Logic
+function setupCustomFlavorModal() {
+  const modal = document.getElementById('modal-custom-flavor');
+  const btnOpen = document.getElementById('btn-add-custom-flavor');
+  const btnCancel = document.getElementById('btn-cancel-modal');
+  const btnSubmit = document.getElementById('btn-submit-custom-flavor');
+
+  btnOpen.onclick = () => modal.classList.add('active');
+  btnCancel.onclick = () => modal.classList.remove('active');
+
+  document.querySelectorAll('#icon-picker .icon-option').forEach(opt => {
+    opt.onclick = () => {
+      document.querySelectorAll('#icon-picker .icon-option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      selectedIcon = opt.dataset.icon;
+    };
+  });
+
+  btnSubmit.onclick = () => {
+    const nameInput = document.getElementById('input-flavor-name').value.trim();
+    if (!nameInput) {
+      alert('Please enter a flavor name!');
+      return;
+    }
+
+    const pos = document.getElementById('select-seed-position').value;
+    const newFlavor = {
+      id: 'custom-' + Date.now(),
+      name: nameInput,
+      isCustom: true,
+      customIcon: selectedIcon
+    };
+
+    if (pos === 'top') {
+      allFlavors.unshift(newFlavor);
+    } else {
+      allFlavors.splice(7, 0, newFlavor);
+    }
+
+    // Reset affected matches
+    bracketWinners = {
+      'match-1': null, 'match-2': null, 'match-3': null, 'match-4': null,
+      'match-5': null, 'match-6': null, 'match-7': null
+    };
+
+    modal.classList.remove('active');
+    document.getElementById('input-flavor-name').value = '';
+    renderBracketTree();
+  };
+}
+
+// Reset Playoff Bracket
+document.getElementById('btn-reset-bracket').onclick = () => {
+  bracketWinners = {
+    'match-1': null, 'match-2': null, 'match-3': null, 'match-4': null,
+    'match-5': null, 'match-6': null, 'match-7': null
+  };
+  document.getElementById('invite-card').classList.remove('visible');
+  document.getElementById('btn-jump-invite').style.display = 'none';
+  renderBracketTree();
+};
+
+// Print Button
+document.getElementById('btn-print-bracket').onclick = () => {
+  window.print();
+};
+
+// RSVP Handler
+async function handleRsvpSubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById('rsvp-name').value.trim();
+  const email = document.getElementById('rsvp-email').value.trim();
+  const attending = parseInt(document.getElementById('rsvp-attending').value, 10);
+  const statusMsg = document.getElementById('rsvp-status-msg');
+  const btnSubmit = document.getElementById('btn-submit-rsvp');
+
+  if (!name || !email) return;
+
+  btnSubmit.disabled = true;
+  btnSubmit.innerText = 'Submitting...';
+
+  // Format bracket payload mapping match keys
+  const bracketPayload = {
+    r1m0: bracketWinners['match-1'] ? bracketWinners['match-1'].name : null,
+    r1m1: bracketWinners['match-2'] ? bracketWinners['match-2'].name : null,
+    r1m2: bracketWinners['match-3'] ? bracketWinners['match-3'].name : null,
+    r1m3: bracketWinners['match-4'] ? bracketWinners['match-4'].name : null,
+    r2m0: bracketWinners['match-5'] ? bracketWinners['match-5'].name : null,
+    r2m1: bracketWinners['match-6'] ? bracketWinners['match-6'].name : null,
+    final: bracketWinners['match-7'] ? bracketWinners['match-7'].name : null
+  };
+
+  try {
+    const res = await fetch('/api/rsvp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        email,
+        attending: attending === 1,
+        bracket_data: bracketPayload
+      })
+    });
+
+    const data = await res.json();
+
+    statusMsg.style.display = 'block';
+    if (res.ok && data.success) {
+      statusMsg.style.background = '#dcfce7';
+      statusMsg.style.color = '#166534';
+      statusMsg.innerHTML = `🎉 <strong>RSVP Confirmed!</strong> Thank you, ${name}! Your bracket has been recorded.`;
+      document.getElementById('rsvp-form').reset();
+      
+      setTimeout(() => {
+        openCrowdModal();
+      }, 1200);
+    } else {
+      statusMsg.style.background = '#fee2e2';
+      statusMsg.style.color = '#991b1b';
+      statusMsg.innerText = data.error || 'Failed to submit RSVP. Please try again.';
+    }
+  } catch (err) {
+    statusMsg.style.display = 'block';
+    statusMsg.style.background = '#fee2e2';
+    statusMsg.style.color = '#991b1b';
+    statusMsg.innerText = 'Network error submitting RSVP. Please try again.';
+  } finally {
+    btnSubmit.disabled = false;
+    btnSubmit.innerHTML = '<span>✨ Submit RSVP & Bracket</span>';
+  }
+}
+
+// Community Bracket Modal Handler
+function setupCrowdModal() {
+  const modal = document.getElementById('modal-crowd-bracket');
+  const btnOpen = document.getElementById('btn-view-crowd');
+  const btnClose = document.getElementById('btn-close-crowd-modal');
+
+  if (btnOpen) btnOpen.onclick = openCrowdModal;
+  if (btnClose) btnClose.onclick = () => modal.classList.remove('active');
+}
+
+async function openCrowdModal() {
+  const modal = document.getElementById('modal-crowd-bracket');
+  const subtitle = document.getElementById('crowd-subtitle');
+  const content = document.getElementById('crowd-bracket-content');
+
+  modal.classList.add('active');
+  subtitle.innerText = 'Fetching community picks...';
+  content.innerHTML = '<div style="text-align: center; color: #64748b; padding: 2rem;">Loading data from D1 database...</div>';
+
+  try {
+    const res = await fetch('/api/crowdsourced');
+    const data = await res.json();
+
+    if (!data.matchups || data.total_brackets === 0) {
+      subtitle.innerText = 'No community brackets submitted yet!';
+      content.innerHTML = '<div style="text-align: center; color: #64748b; padding: 2rem;">Be the first guest to submit an RSVP and bracket!</div>';
+      return;
+    }
+
+    subtitle.innerText = `Based on majority votes across ${data.total_brackets} guest bracket${data.total_brackets > 1 ? 's' : ''}!`;
+
+    const getPick = (key) => (data.matchups[key] && data.matchups[key].majorityWinner) ? data.matchups[key].majorityWinner : 'TBD';
+    const getVotes = (key) => (data.matchups[key]) ? `${data.matchups[key].totalVotes} votes` : '';
+
+    content.innerHTML = `
+      <div style="display: flex; gap: 1rem; justify-content: space-between; min-width: 600px; text-align: center;">
+        <div style="flex: 1; background: #f8fafc; border-radius: 8px; padding: 1rem; border: 1px solid #e2e8f0;">
+          <h4 style="margin: 0 0 0.75rem 0; color: #475569;">Quarterfinal Winners</h4>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.9rem;">
+            <div style="background: white; padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;"><strong>Match 1:</strong> ${getPick('r1m0')}</div>
+            <div style="background: white; padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;"><strong>Match 2:</strong> ${getPick('r1m1')}</div>
+            <div style="background: white; padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;"><strong>Match 3:</strong> ${getPick('r1m2')}</div>
+            <div style="background: white; padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;"><strong>Match 4:</strong> ${getPick('r1m3')}</div>
+          </div>
+        </div>
+        <div style="flex: 1; background: #f1f5f9; border-radius: 8px; padding: 1rem; border: 1px solid #cbd5e1;">
+          <h4 style="margin: 0 0 0.75rem 0; color: #334155;">Semifinal Winners</h4>
+          <div style="display: flex; flex-direction: column; gap: 1rem; font-size: 0.9rem; margin-top: 1rem;">
+            <div style="background: white; padding: 0.75rem; border-radius: 6px; border: 1px solid #94a3b8;"><strong>SF 1:</strong> ${getPick('r2m0')}</div>
+            <div style="background: white; padding: 0.75rem; border-radius: 6px; border: 1px solid #94a3b8;"><strong>SF 2:</strong> ${getPick('r2m1')}</div>
+          </div>
+        </div>
+        <div style="flex: 1; background: #fef3c7; border-radius: 8px; padding: 1rem; border: 1px solid #f59e0b;">
+          <h4 style="margin: 0 0 0.75rem 0; color: #b45309;">👑 Crowd Favorite Champion</h4>
+          <div style="font-size: 1.2rem; font-weight: bold; color: #92400e; margin-top: 2rem;">
+            ${getPick('final')}
+          </div>
+          <div style="font-size: 0.85rem; color: #b45309; margin-top: 0.5rem;">${getVotes('final')}</div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    subtitle.innerText = 'Failed to load community predictions.';
+    content.innerHTML = '<div style="text-align: center; color: #ef4444; padding: 2rem;">Error fetching data. Please try again.</div>';
+  }
+}
+
+// Initialize on DOM load
+window.addEventListener('DOMContentLoaded', () => {
+  setupSeedingModal();
+  setupCustomFlavorModal();
+  setupCrowdModal();
+  renderBracketTree();
+});
+</script>
+{{ end }}

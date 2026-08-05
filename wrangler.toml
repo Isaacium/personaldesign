@@ -7,6 +7,11 @@ compatibility_date = "2026-02-27"
 compatibility_date = "2024-03-20"
 
 [[env.production.d1_databases]]
-database_id = "8f306920-41f4-47d0-9b0c-9613aabc98b7"
+binding = "INVITES_DB"
+database_name = "my_invites_db"
+database_id = "1cf6647a-b17b-49ed-a12a-28cdfc7bd4e0"
+
+[[env.production.d1_databases]]
 binding = "DB"
-database_name = "DB"
+database_name = "my_games_db"
+database_id = "8f306920-41f4-47d0-9b0c-9613aabc98b7"
