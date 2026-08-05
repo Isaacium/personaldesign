@@ -1,5 +1,5 @@
 ---
-title: "I+J Engagement Party"
+title: "I+J Engagement Party GroupMe"
 type: "page"
 layout: "engagement-party-groupme"
 url: "/j-faz-engagement-party-2"

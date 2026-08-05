@@ -1,5 +1,5 @@
 ---
-title: "I+J Engagement Party"
+title: "I+J Engagement Party Paper"
 type: "page"
 layout: "engagement-party"
 url: "/j-faz-engagement-party"
