@@ -12,3 +12,7 @@ node_modules/
 
 # Ignore .wrangler
 .wrangler/
+
+# Ignore compiled Wrangler build artifacts
+_worker.bundle
+
