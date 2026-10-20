@@ -1,6 +1,6 @@
 ---
 title: "I+J Connections"
-type: "page"
+type: "invites"
 layout: "engagement-party-connections"
 url: "/j-faz-connections"
 date: "2026-07-16"

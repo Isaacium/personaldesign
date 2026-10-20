@@ -1,6 +1,6 @@
 ---
 title: "I+J Engagement Party Paper"
-type: "page"
+type: "invites"
 layout: "engagement-party"
 url: "/j-faz-engagement-party"
 date: "2026-07-13"

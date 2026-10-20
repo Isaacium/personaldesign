@@ -1,6 +1,6 @@
 ---
 title: "I+J Engagement Party GroupMe"
-type: "page"
+type: "invites"
 layout: "engagement-party-groupme"
 url: "/j-faz-engagement-party-2"
 date: "2026-07-14"
