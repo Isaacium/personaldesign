@@ -1,0 +1,1666 @@
+{{ define "main" }}
+<div class="jiapu-pdf-app">
+  <!-- Minimal Floating Control Bar -->
+  <div class="pdf-toolbar" id="pdf-toolbar">
+    <div class="toolbar-left">
+      <a href="{{ .Site.BaseURL }}" class="tb-btn home-link" title="Back to Home">
+        <i class="fas fa-arrow-left"></i> Home
+      </a>
+      <span class="tb-divider"></span>
+      <span class="tb-title">山东省 · 劉氏家谱 (Liu &amp; Yi Family Tree)</span>
+    </div>
+
+    <div class="toolbar-center">
+      <!-- Toggle for Men=Squares / Women=Circles -->
+      <button id="toggle-shapes-btn" class="tb-btn shape-toggle-btn active" onclick="toggleGenderShapes()" title="Toggle Squares (Men) and Circles (Women)">
+        <span class="toggle-icon-box"></span>
+        <span class="toggle-icon-circle"></span>
+        <span id="toggle-shapes-label">男方女圆: ON (Men = Squares, Women = Circles)</span>
+      </button>
+
+      <!-- Search Box -->
+      <div class="tb-search">
+        <i class="fas fa-search"></i>
+        <input type="text" id="pdf-search-input" placeholder="Search name (e.g. Isaac, CiCi, 应广, 伊爱华, 朱承)..." oninput="handlePdfSearch(this.value)" autocomplete="off">
+        <button id="pdf-search-clear" class="tb-clear" onclick="clearPdfSearch()" style="display:none;"><i class="fas fa-times"></i></button>
+        <span id="pdf-search-count" class="tb-count" style="display:none;">0</span>
+      </div>
+    </div>
+
+    <div class="toolbar-right">
+      <button class="tb-btn" onclick="zoomInPdf()" title="Zoom In (+)"><i class="fas fa-search-plus"></i></button>
+      <button class="tb-btn" onclick="zoomOutPdf()" title="Zoom Out (-)"><i class="fas fa-search-minus"></i></button>
+      <button class="tb-btn" onclick="fitPdfToScreen()" title="Fit to Screen"><i class="fas fa-compress-arrows-alt"></i> Fit</button>
+      <button class="tb-btn" onclick="resetPdfZoom()" title="100% Actual Size">100%</button>
+      <button class="tb-btn" onclick="downloadJiapuSvg()" title="Download SVG"><i class="fas fa-download"></i> SVG</button>
+      <button class="tb-btn" onclick="window.print()" title="Print"><i class="fas fa-print"></i></button>
+    </div>
+  </div>
+
+  <!-- Main Interactive White Viewport -->
+  <div id="pdf-viewport" class="pdf-viewport">
+    <div id="pdf-canvas" class="pdf-canvas">
+      <svg id="jiapu-svg" class="jiapu-svg show-gender-shapes" viewBox="0 0 3900 2220" width="3900" height="2220" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <style>
+            .jiapu-svg {
+              background-color: #ffffff;
+              font-family: "Songti SC", "SimSun", "STSong", "Noto Serif SC", "Source Han Serif SC", "PMingLiU", "Times New Roman", serif;
+              user-select: none;
+            }
+            .header-prov-cn {
+              font-size: 32px;
+              font-weight: 500;
+              fill: #000000;
+              text-anchor: middle;
+              letter-spacing: 4px;
+            }
+            .header-prov-en {
+              font-size: 24px;
+              font-weight: 400;
+              fill: #000000;
+              text-anchor: middle;
+              font-family: "Times New Roman", Times, Georgia, serif;
+            }
+            .header-clan {
+              font-size: 40px;
+              font-weight: 600;
+              fill: #000000;
+              text-anchor: middle;
+              font-family: "Songti SC", "SimSun", "Times New Roman", serif;
+            }
+            /* Tree connector lines */
+            .tree-line {
+              stroke: #000000;
+              stroke-width: 1.5px;
+              fill: none;
+              stroke-linecap: square;
+            }
+            .marriage-line {
+              stroke: #000000;
+              stroke-width: 1.3px;
+              fill: none;
+            }
+            /* Birth order numerals on stems */
+            .order-bg {
+              fill: #ffffff;
+            }
+            .order-text {
+              font-size: 13px;
+              fill: #000000;
+              text-anchor: middle;
+              dominant-baseline: central;
+              font-family: "Songti SC", "SimSun", serif;
+            }
+            /* Small PDF-style node ring above children */
+            .pdf-node-ring {
+              fill: #ffffff;
+              stroke: #000000;
+              stroke-width: 1.5px;
+              transition: opacity 0.15s ease;
+            }
+            /* Gender shapes: Men = Black Squares, Women = Red Circles */
+            .gender-shape {
+              fill: #ffffff;
+              stroke-width: 1.6px;
+              opacity: 0;
+              transition: opacity 0.15s ease, stroke-width 0.15s ease, fill 0.15s ease;
+            }
+            .male-square {
+              stroke: #000000;
+            }
+            .female-circle {
+              stroke: #c00000;
+            }
+            /* When .show-gender-shapes is active on SVG */
+            .show-gender-shapes .gender-shape {
+              opacity: 1;
+            }
+            .show-gender-shapes .pdf-node-ring {
+              opacity: 0;
+            }
+            /* Person text styles */
+            .person-group {
+              cursor: pointer;
+            }
+            .person-group:hover .gender-shape {
+              stroke-width: 2.6px;
+              fill: #fffdf5;
+            }
+            .person-group:hover text {
+              font-weight: bold;
+            }
+            .name-cn-male {
+              font-size: 15px;
+              fill: #000000;
+              text-anchor: middle;
+            }
+            .name-py-male {
+              font-size: 9.5px;
+              fill: #000000;
+              text-anchor: middle;
+              font-family: "Times New Roman", Times, serif;
+            }
+            .name-cn-female {
+              font-size: 15px;
+              fill: #c00000;
+              text-anchor: middle;
+            }
+            .name-py-female {
+              font-size: 9.5px;
+              fill: #c00000;
+              text-anchor: middle;
+              font-family: "Times New Roman", Times, serif;
+            }
+            /* Search highlight */
+            .person-group.search-match .gender-shape {
+              opacity: 1 !important;
+              fill: #fef08a !important;
+              stroke: #ca8a04 !important;
+              stroke-width: 3px !important;
+            }
+            .person-group.search-match .pdf-node-ring {
+              fill: #fef08a !important;
+              stroke: #ca8a04 !important;
+              stroke-width: 3px !important;
+            }
+          </style>
+        </defs>
+
+        <!-- Pure White Background Rect -->
+        <rect x="0" y="0" width="3900" height="2220" fill="#ffffff" />
+
+        <!-- Top Center Header (Exact PDF Match) -->
+        <g transform="translate(2000, 0)">
+          <text x="0" y="65" class="header-prov-cn">山东省</text>
+          <text x="0" y="95" class="header-prov-en">Shandong</text>
+          <text x="0" y="142" class="header-clan">劉 Liu</text>
+        </g>
+
+        <!-- Centerpiece Dragon from dragon-146031.svg -->
+        <!-- Placed so the upper neck/wing channel aligns with x=2000 and the tail tip lands right above 向荣 (x=2000, y=1025) -->
+        <image href="/img/dragon-146031.svg" x="1835" y="240" width="355" height="727" opacity="0.92" />
+
+        <!-- Layer for Connecting Lines -->
+        <g id="svg-lines-layer"></g>
+
+        <!-- Layer for Person Nodes -->
+        <g id="svg-nodes-layer"></g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Minimal Person Info Popover -->
+  <div id="person-popover" class="person-popover" style="display:none;">
+    <div class="pop-header">
+      <span id="pop-shape" class="pop-shape"></span>
+      <div>
+        <strong id="pop-title">Name</strong>
+        <span id="pop-sub" class="pop-sub">Subtitle</span>
+      </div>
+      <button class="pop-close" onclick="closePopover()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="pop-body">
+      <div class="pop-row"><span>Generation:</span> <strong id="pop-gen">-</strong></div>
+      <div class="pop-row"><span>Branch:</span> <strong id="pop-branch">-</strong></div>
+      <div class="pop-row"><span>Parents:</span> <strong id="pop-parents">-</strong></div>
+      <div class="pop-row"><span>Spouse:</span> <strong id="pop-spouse">-</strong></div>
+      <div class="pop-row"><span>Children:</span> <strong id="pop-children">-</strong></div>
+    </div>
+  </div>
+</div>
+
+<style>
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #ffffff !important;
+  overflow: hidden;
+}
+
+.jiapu-pdf-app {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Songti SC", serif;
+}
+
+/* Minimal Top Toolbar */
+.pdf-toolbar {
+  height: 48px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  gap: 0.75rem;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.toolbar-left, .toolbar-center, .toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tb-title {
+  font-family: "Songti SC", "SimSun", "Noto Serif SC", serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.tb-divider {
+  width: 1px;
+  height: 20px;
+  background: #cbd5e1;
+  margin: 0 0.25rem;
+}
+
+.tb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.tb-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.shape-toggle-btn.active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1e3a8a;
+  font-weight: 600;
+}
+
+.toggle-icon-box {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 1.8px solid #000000;
+  background: #ffffff;
+}
+
+.toggle-icon-circle {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 1.8px solid #c00000;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.tb-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tb-search .fa-search {
+  position: absolute;
+  left: 0.6rem;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+#pdf-search-input {
+  width: 260px;
+  padding: 0.35rem 3.5rem 0.35rem 1.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  outline: none;
+  background: #ffffff;
+  color: #1e293b;
+}
+
+#pdf-search-input:focus {
+  border-color: #3b82f6;
+}
+
+.tb-clear {
+  position: absolute;
+  right: 2.2rem;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.2rem;
+}
+
+.tb-count {
+  position: absolute;
+  right: 0.4rem;
+  background: #fef08a;
+  color: #854d0e;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+/* Viewport & Canvas */
+.pdf-viewport {
+  flex: 1;
+  width: 100%;
+  height: calc(100vh - 48px);
+  overflow: hidden;
+  position: relative;
+  background: #ffffff;
+  cursor: grab;
+}
+
+.pdf-viewport:active {
+  cursor: grabbing;
+}
+
+.pdf-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+/* Info Popover */
+.person-popover {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 310px;
+  background: #ffffff;
+  border: 1.5px solid #000000;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 200;
+  font-family: "Songti SC", "SimSun", -apple-system, sans-serif;
+}
+
+.pop-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.pop-shape {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.pop-shape.male {
+  border: 2px solid #000000;
+  background: #ffffff;
+}
+
+.pop-shape.female {
+  border: 2px solid #c00000;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.pop-sub {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.pop-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.pop-body {
+  padding: 0.75rem 0.85rem;
+  font-size: 0.82rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.pop-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-bottom: 1px dotted #e2e8f0;
+  padding-bottom: 0.25rem;
+}
+
+.pop-row span {
+  color: #64748b;
+}
+
+.pop-row strong {
+  color: #0f172a;
+  text-align: right;
+}
+
+@media print {
+  .pdf-toolbar, .person-popover, footer {
+    display: none !important;
+  }
+  .pdf-viewport {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .pdf-canvas {
+    position: static !important;
+    transform: none !important;
+  }
+}
+</style>
+
+<script>
+const SVG_NS = "http://www.w3.org/2000/svg";
+const linesLayer = document.getElementById("svg-lines-layer");
+const nodesLayer = document.getElementById("svg-nodes-layer");
+
+// Dimensions for Square (Male) and Circle (Female)
+const BOX_SIZE = 54;          // 54x54 true square for men
+const BOX_HALF = BOX_SIZE / 2; // 27
+const CIRCLE_R = 27;          // r=27 (diameter 54) true circle for women
+const RING_OFFSET_Y = -20;    // PDF small ring offset when shapes are off
+
+// Helper to create SVG elements
+function svgEl(tag, attrs = {}) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    el.setAttribute(k, v);
+  }
+  return el;
+}
+
+// Draw a straight line
+function drawLine(x1, y1, x2, y2, cls = "tree-line") {
+  linesLayer.appendChild(svgEl("line", { x1, y1, x2, y2, class: cls }));
+}
+
+// Draw birth order numeral on a vertical stem
+function drawOrderNum(x, y, orderStr) {
+  if (!orderStr) return;
+  const g = svgEl("g", { transform: `translate(${x}, ${y})` });
+  g.appendChild(svgEl("rect", { x: -8, y: -8, width: 16, height: 16, class: "order-bg" }));
+  const t = svgEl("text", { x: 0, y: 0, class: "order-text" });
+  t.textContent = orderStr;
+  g.appendChild(t);
+  linesLayer.appendChild(g);
+}
+
+/**
+ * Draw an individual person node centered at (x, y).
+ * Men: Black text, Black square (54x54)
+ * Women: Red text, Red circle (r=27)
+ */
+function drawPersonNode(p) {
+  const {
+    x, y, cn, py = "", gender = "M",
+    order = "", hasTopRing = false,
+    meta = {}
+  } = p;
+
+  const isMale = gender === "M";
+  const g = svgEl("g", {
+    class: "person-group",
+    transform: `translate(${x}, ${y})`,
+    "data-search": `${cn} ${py} ${meta.en || ""} ${meta.note || ""}`.toLowerCase()
+  });
+
+  // 1. Gender Shape (Square for M, Circle for F)
+  if (isMale) {
+    g.appendChild(svgEl("rect", {
+      x: -BOX_HALF,
+      y: -BOX_HALF,
+      width: BOX_SIZE,
+      height: BOX_SIZE,
+      class: "gender-shape male-square"
+    }));
+  } else {
+    g.appendChild(svgEl("circle", {
+      cx: 0,
+      cy: 0,
+      r: CIRCLE_R,
+      class: "gender-shape female-circle"
+    }));
+  }
+
+  // 2. Small PDF-style top ring (visible when gender shapes are toggled OFF)
+  if (hasTopRing) {
+    g.appendChild(svgEl("circle", {
+      cx: 0,
+      cy: -22,
+      r: 5,
+      class: "pdf-node-ring"
+    }));
+  }
+
+  // 3. Name & Pinyin/Subtitle Text
+  const cnClass = isMale ? "name-cn-male" : "name-cn-female";
+  const pyClass = isMale ? "name-py-male" : "name-py-female";
+
+  if (py) {
+    const tCn = svgEl("text", { x: 0, y: -2, class: cnClass });
+    tCn.textContent = cn;
+    g.appendChild(tCn);
+
+    const tPy = svgEl("text", { x: 0, y: 12, class: pyClass });
+    tPy.textContent = py;
+    g.appendChild(tPy);
+  } else {
+    const tCn = svgEl("text", { x: 0, y: 5, class: cnClass });
+    tCn.textContent = cn;
+    g.appendChild(tCn);
+  }
+
+  // Click handler for popover
+  g.addEventListener("click", (e) => {
+    e.stopPropagation();
+    openPopover(p);
+  });
+
+  nodesLayer.appendChild(g);
+}
+
+/**
+ * Draw a family unit (Primary person + 0 or more spouses)
+ * Returns attachment points for parent drop-in and child drop-out.
+ */
+function drawUnit(cfg) {
+  const {
+    x, y,
+    cn, py = "", gender = "M",
+    order = "",
+    hasParent = true,
+    spouses = [], // Array of { cn, py, gender }
+    meta = {}
+  } = cfg;
+
+  // Draw primary person at (x, y)
+  drawPersonNode({
+    x, y, cn, py, gender, order,
+    hasTopRing: hasParent,
+    meta: {
+      ...meta,
+      spouseNames: spouses.map(s => `${s.cn}${s.py ? ' (' + s.py + ')' : ''}`).join(", ") || "-"
+    }
+  });
+
+  const spouseGap = 68; // center-to-center distance between spouses
+
+  if (spouses.length === 1) {
+    const sp = spouses[0];
+    const sx = x + spouseGap;
+    // Horizontal marriage line between right edge of primary and left edge of spouse
+    drawLine(x + BOX_HALF, y, sx - BOX_HALF, y, "marriage-line");
+    drawPersonNode({
+      x: sx, y,
+      cn: sp.cn, py: sp.py || "",
+      gender: sp.gender || (gender === "M" ? "F" : "M"),
+      hasTopRing: false,
+      meta: {
+        gen: meta.gen,
+        branch: meta.branch,
+        parents: sp.parents || "-",
+        spouseNames: `${cn}${py ? ' (' + py + ')' : ''}`,
+        children: meta.children || "-"
+      }
+    });
+  } else if (spouses.length === 4) {
+    // 2x2 grid of 4 wives (as in 长龄 in the PDF)
+    const midX = x + 36;
+    drawLine(x + BOX_HALF, y, midX, y, "marriage-line");
+    drawLine(midX, y - 28, midX, y + 28, "marriage-line");
+    const positions = [
+      { sx: x + 68, sy: y - 28 },
+      { sx: x + 132, sy: y - 28 },
+      { sx: x + 68, sy: y + 28 },
+      { sx: x + 132, sy: y + 28 }
+    ];
+    drawLine(midX, y - 28, x + 68 - BOX_HALF, y - 28, "marriage-line");
+    drawLine(x + 68 + BOX_HALF, y - 28, x + 132 - BOX_HALF, y - 28, "marriage-line");
+    drawLine(midX, y + 28, x + 68 - BOX_HALF, y + 28, "marriage-line");
+    drawLine(x + 68 + BOX_HALF, y + 28, x + 132 - BOX_HALF, y + 28, "marriage-line");
+
+    spouses.forEach((sp, idx) => {
+      const pos = positions[idx];
+      drawPersonNode({
+        x: pos.sx, y: pos.sy,
+        cn: sp.cn, py: sp.py || "",
+        gender: sp.gender || "F",
+        hasTopRing: false,
+        meta: {
+          gen: meta.gen,
+          branch: meta.branch,
+          parents: "-",
+          spouseNames: `${cn} (${py})`,
+          children: meta.children || "-"
+        }
+      });
+    });
+  } else if (spouses.length > 1) {
+    // Multiple wives stacked vertically (like 长辉, 向荣, 长兰, 文华, 文耀)
+    const sx = x + spouseGap;
+    const totalH = (spouses.length - 1) * 56;
+    const startY = y - totalH / 2;
+    const midX = x + spouseGap / 2;
+
+    drawLine(x + BOX_HALF, y, midX, y, "marriage-line");
+    drawLine(midX, startY, midX, startY + totalH, "marriage-line");
+
+    spouses.forEach((sp, idx) => {
+      const sy = startY + idx * 56;
+      drawLine(midX, sy, sx - BOX_HALF, sy, "marriage-line");
+      drawPersonNode({
+        x: sx, y: sy,
+        cn: sp.cn, py: sp.py || "",
+        gender: sp.gender || "F",
+        hasTopRing: false,
+        meta: {
+          gen: meta.gen,
+          branch: meta.branch,
+          parents: "-",
+          spouseNames: `${cn} (${py})`,
+          children: meta.children || "-"
+        }
+      });
+    });
+  }
+
+  return {
+    x,
+    y,
+    topY: y - BOX_HALF,
+    bottomY: y + BOX_HALF,
+    order
+  };
+}
+
+/**
+ * Connect a parent anchor (px, pyBottom) to an array of children anchors
+ */
+function connectChildren(px, pyBottom, busY, children) {
+  if (!children || children.length === 0) return;
+
+  if (children.length === 1) {
+    const ch = children[0];
+    if (Math.abs(ch.x - px) < 2) {
+      drawLine(px, pyBottom, ch.x, ch.topY);
+      if (ch.order) {
+        drawOrderNum(ch.x, (pyBottom + ch.topY) / 2, ch.order);
+      }
+    } else {
+      drawLine(px, pyBottom, px, busY);
+      drawLine(px, busY, ch.x, busY);
+      drawLine(ch.x, busY, ch.x, ch.topY);
+      if (ch.order) {
+        drawOrderNum(ch.x, (busY + ch.topY) / 2, ch.order);
+      }
+    }
+    return;
+  }
+
+  // Drop from parent to horizontal sibling bar
+  drawLine(px, pyBottom, px, busY);
+
+  // Horizontal bar from leftmost child to rightmost child
+  const xs = children.map(c => c.x);
+  const minX = Math.min(...xs, px);
+  const maxX = Math.max(...xs, px);
+  drawLine(minX, busY, maxX, busY);
+
+  // Vertical stems to each child
+  children.forEach(ch => {
+    drawLine(ch.x, busY, ch.x, ch.topY);
+    if (ch.order) {
+      drawOrderNum(ch.x, busY + (ch.topY - busY) * 0.48, ch.order);
+    }
+  });
+}
+
+// ============================================================================
+// BUILD THE ENTIRE JIAPU TREE (EXACT PDF + AIHUA YI LINE + CONTEMPORARY LINE)
+// ============================================================================
+function buildFullJiapuTree() {
+  // --------------------------------------------------------------------------
+  // 1. CENTRAL ANCESTRAL SPINE (Gen 1 to Gen 6: 君志 -> 法商)
+  // --------------------------------------------------------------------------
+  const CX = 2000;
+  const g1_junzhi = drawUnit({
+    x: CX, y: 185, cn: "君志", py: "junzhi", gender: "M", hasParent: false,
+    meta: { gen: "1世 (Gen 1)", branch: "山东刘氏始祖", parents: "-", children: "希贤" }
+  });
+  const g2_xixian = drawUnit({
+    x: CX, y: 268, cn: "希贤", py: "xixian", gender: "M", order: "一",
+    meta: { gen: "2世 (Gen 2)", branch: "山东刘氏", parents: "君志", children: "清" }
+  });
+  const g3_qing = drawUnit({
+    x: CX, y: 351, cn: "清", py: "qing", gender: "M", order: "一",
+    meta: { gen: "3世 (Gen 3)", branch: "山东刘氏", parents: "希贤", children: "志公" }
+  });
+  const g4_zhigong = drawUnit({
+    x: CX, y: 434, cn: "志公", py: "zhigong", gender: "M", order: "一",
+    meta: { gen: "4世 (Gen 4)", branch: "山东刘氏", parents: "清", children: "奉安" }
+  });
+  const g5_fengan = drawUnit({
+    x: CX, y: 517, cn: "奉安", py: "fengan", gender: "M", order: "一",
+    meta: { gen: "5世 (Gen 5)", branch: "山东刘氏", parents: "志公", children: "法商" }
+  });
+  const g6_fashang = drawUnit({
+    x: CX, y: 600, cn: "法商", py: "fashang", gender: "M", order: "一",
+    spouses: [{ cn: "张氏", py: "zhangshi", gender: "F" }],
+    meta: { gen: "6世 (Gen 6)", branch: "山东刘氏", parents: "奉安", children: "向春 (一), 向时 (二), 向荣 (三)" }
+  });
+
+  connectChildren(CX, g1_junzhi.bottomY, 225, [g2_xixian]);
+  connectChildren(CX, g2_xixian.bottomY, 308, [g3_qing]);
+  connectChildren(CX, g3_qing.bottomY, 391, [g4_zhigong]);
+  connectChildren(CX, g4_zhigong.bottomY, 474, [g5_fengan]);
+  connectChildren(CX, g5_fengan.bottomY, 557, [g6_fashang]);
+
+  // --------------------------------------------------------------------------
+  // 2. THREE SONS OF 法商: 向时 (Left), 向荣 (Below Dragon), 向春 (Right)
+  // --------------------------------------------------------------------------
+  const g7_xiangshi = drawUnit({
+    x: 920, y: 600, cn: "向时", py: "xiangshi", gender: "M", order: "二",
+    spouses: [{ cn: "郭氏", py: "guoshi", gender: "F" }],
+    meta: { gen: "7世 (Gen 7)", branch: "向时支 (二房)", parents: "法商 & 张氏", children: "长辉" }
+  });
+
+  const g7_xiangchun = drawUnit({
+    x: 2980, y: 625, cn: "向春", py: "xiangchun", gender: "M", order: "一",
+    spouses: [{ cn: "贾氏", py: "jiashi", gender: "F" }],
+    meta: { gen: "7世 (Gen 7)", branch: "向春支 (长房)", parents: "法商 & 张氏", children: "长清" }
+  });
+
+  const g7_xiangrong = drawUnit({
+    x: CX, y: 1030, cn: "向荣", py: "xiangrong", gender: "M", order: "三",
+    spouses: [
+      { cn: "周氏", py: "zhoushi", gender: "F" },
+      { cn: "郭氏", py: "guoshi", gender: "F" }
+    ],
+    meta: { gen: "7世 (Gen 7 · 直系)", branch: "向荣主支", parents: "法商 & 张氏", children: "长龄 (一), 长兰 (二), 长润 (三)" }
+  });
+
+  // Connect 法商 to 向时 (left) and 向春 (right) via upper horizontal bar at y=558, and down through dragon to 向荣
+  const fashangBusY = 550;
+  drawLine(920, fashangBusY, 2980, fashangBusY);
+  drawLine(920, fashangBusY, 920, g7_xiangshi.topY);
+  drawOrderNum(920, 562, "二");
+  drawLine(2980, fashangBusY, 2980, g7_xiangchun.topY);
+  drawOrderNum(2980, 575, "一");
+  // Line from 法商 down to 向荣 at the bottom of the dragon's tail
+  drawLine(CX, 955, CX, g7_xiangrong.topY);
+  drawOrderNum(CX, 980, "三");
+
+  // --------------------------------------------------------------------------
+  // 3. UPPER LEFT WING: 向时 -> 长辉 -> 文昌, 文升, 文章 -> 治亨, 治元, 治明 -> 广字辈
+  // --------------------------------------------------------------------------
+  const g8_changhui = drawUnit({
+    x: 920, y: 715, cn: "长辉", py: "changhui", gender: "M", order: "一",
+    spouses: [
+      { cn: "王氏", py: "wangshi", gender: "F" },
+      { cn: "杨氏", py: "yangshi", gender: "F" }
+    ],
+    meta: { gen: "8世", branch: "向时支", parents: "向时 & 郭氏", children: "文昌, 文升, 文章" }
+  });
+  connectChildren(920, g7_xiangshi.bottomY, 655, [g8_changhui]);
+
+  // Gen 9 under 长辉
+  const g9_wenchang = drawUnit({
+    x: 560, y: 830, cn: "文昌", py: "wenchang", gender: "M", order: "一",
+    spouses: [{ cn: "郭氏", py: "guoshi", gender: "F" }],
+    meta: { gen: "9世", branch: "向时支", parents: "长辉", children: "治亨, 治元" }
+  });
+  const g9_wensheng = drawUnit({
+    x: 1050, y: 830, cn: "文升", py: "wensheng", gender: "M", order: "二",
+    spouses: [{ cn: "刘氏", py: "liushi", gender: "F" }],
+    meta: { gen: "9世", branch: "向时支", parents: "长辉", children: "-" }
+  });
+  const g9_wenzhang = drawUnit({
+    x: 1380, y: 830, cn: "文章", py: "wenzhang", gender: "M", order: "三",
+    spouses: [{ cn: "张氏", py: "zhangshi", gender: "F" }],
+    meta: { gen: "9世", branch: "向时支", parents: "长辉", children: "治明" }
+  });
+  connectChildren(920, g8_changhui.bottomY, 775, [g9_wenchang, g9_wensheng, g9_wenzhang]);
+
+  // Gen 10 under 文昌 & 文章
+  const g10_zhiheng = drawUnit({
+    x: 340, y: 945, cn: "治亨", py: "zhiheng", gender: "M", order: "一",
+    spouses: [{ cn: "高氏", py: "gaoshi", gender: "F" }],
+    meta: { gen: "10世", branch: "向时支", parents: "文昌 & 郭氏", children: "广亭, 广礼" }
+  });
+  const g10_zhiyuan = drawUnit({
+    x: 820, y: 945, cn: "治元", py: "zhiyuan", gender: "M", order: "二",
+    spouses: [{ cn: "王氏", py: "wangshi", gender: "F" }],
+    meta: { gen: "10世", branch: "向时支", parents: "文昌 & 郭氏", children: "广全, 广新, 广军, 广水, 广太" }
+  });
+  connectChildren(560, g9_wenchang.bottomY, 890, [g10_zhiheng, g10_zhiyuan]);
+
+  const g10_zhiming = drawUnit({
+    x: 1380, y: 945, cn: "治明", py: "zhiming", gender: "M", order: "一",
+    spouses: [{ cn: "宋氏", py: "songshi", gender: "F" }],
+    meta: { gen: "10世", branch: "向时支", parents: "文章 & 张氏", children: "三同, 广通, 广福" }
+  });
+  connectChildren(1380, g9_wenzhang.bottomY, 890, [g10_zhiming]);
+
+  // Gen 11 under 治亨
+  const g11_guangting = drawUnit({
+    x: 240, y: 1065, cn: "广亭", py: "guangting", gender: "M", order: "二",
+    spouses: [{ cn: "石氏", py: "shishi", gender: "F" }],
+    meta: { gen: "11世", branch: "向时支", parents: "治亨 & 高氏" }
+  });
+  const g11_guangli = drawUnit({
+    x: 400, y: 1065, cn: "广礼", py: "guangli", gender: "M", order: "一",
+    spouses: [{ cn: "张氏", py: "zhangshi", gender: "F" }],
+    meta: { gen: "11世", branch: "向时支", parents: "治亨 & 高氏" }
+  });
+  connectChildren(340, g10_zhiheng.bottomY, 1005, [g11_guangting, g11_guangli]);
+
+  // Gen 11 under 治元 (5 sons)
+  const g11_guangquan = drawUnit({
+    x: 575, y: 1065, cn: "广全", py: "guangquan", gender: "M", order: "五",
+    spouses: [{ cn: "妻", py: "", gender: "F" }],
+    meta: { gen: "11世", branch: "向时支", parents: "治元 & 王氏" }
+  });
+  const g11_guangxin = drawUnit({
+    x: 725, y: 1065, cn: "广新", py: "guangxin", gender: "M", order: "四",
+    spouses: [{ cn: "妻", py: "", gender: "F" }],
+    meta: { gen: "11世", branch: "向时支", parents: "治元 & 王氏" }
+  });
+  const g11_guangjun = drawUnit({
+    x: 875, y: 1065, cn: "广军", py: "guangjun", gender: "M", order: "三",
+    spouses: [{ cn: "妻", py: "", gender: "F" }],
+    meta: { gen: "11世", branch: "向时支", parents: "治元 & 王氏" }
+  });
+  const g11_guangshui = drawUnit({
+    x: 1020, y: 1065, cn: "广水", py: "guangshui", gender: "M", order: "二",
+    meta: { gen: "11世", branch: "向时支", parents: "治元 & 王氏" }
+  });
+  const g11_guangtai = drawUnit({
+    x: 1110, y: 1065, cn: "广太", py: "guangtai", gender: "M", order: "一",
+    spouses: [{ cn: "王氏", py: "wangshi", gender: "F" }],
+    meta: { gen: "11世", branch: "向时支", parents: "治元 & 王氏" }
+  });
+  connectChildren(820, g10_zhiyuan.bottomY, 1005, [
+    g11_guangquan, g11_guangxin, g11_guangjun, g11_guangshui, g11_guangtai
+  ]);
+
+  // Gen 11 under 治明 (3 sons)
+  const g11_santong = drawUnit({
+    x: 1280, y: 1065, cn: "三同", py: "santong", gender: "M", order: "三",
+    spouses: [{ cn: "杨淑英", py: "yangshuying", gender: "F" }],
+    meta: { gen: "11世", branch: "向时支", parents: "治明 & 宋氏", children: "刘杨" }
+  });
+  const g11_guangtong1 = drawUnit({
+    x: 1445, y: 1065, cn: "广通", py: "guangtong", gender: "M", order: "二",
+    spouses: [{ cn: "刘闻芹", py: "liuwenqin", gender: "F" }],
+    meta: { gen: "11世", branch: "向时支", parents: "治明 & 宋氏", children: "子 son" }
+  });
+  const g11_guangfu = drawUnit({
+    x: 1610, y: 1065, cn: "广福", py: "guangfu", gender: "M", order: "一",
+    spouses: [{ cn: "刘志俊", py: "liuzhijun", gender: "F" }],
+    meta: { gen: "11世", branch: "向时支", parents: "治明 & 宋氏", children: "咏梅" }
+  });
+  connectChildren(1380, g10_zhiming.bottomY, 1005, [g11_santong, g11_guangtong1, g11_guangfu]);
+
+  // Gen 12 under 三同, 广通, 广福
+  const g12_liuyang = drawUnit({
+    x: 1280, y: 1175, cn: "刘杨", py: "liuyang", gender: "M", order: "一",
+    meta: { gen: "12世", branch: "向时支", parents: "三同 & 杨淑英" }
+  });
+  const g12_son = drawUnit({
+    x: 1445, y: 1175, cn: "子", py: "son", gender: "M", order: "一",
+    meta: { gen: "12世", branch: "向时支", parents: "广通 & 刘闻芹" }
+  });
+  const g12_yongmei = drawUnit({
+    x: 1610, y: 1175, cn: "咏梅", py: "yongmei", gender: "F", order: "一",
+    meta: { gen: "12世", branch: "向时支", parents: "广福 & 刘志俊" }
+  });
+  connectChildren(1280, g11_santong.bottomY, 1120, [g12_liuyang]);
+  connectChildren(1445, g11_guangtong1.bottomY, 1120, [g12_son]);
+  connectChildren(1610, g11_guangfu.bottomY, 1120, [g12_yongmei]);
+
+  // --------------------------------------------------------------------------
+  // 4. UPPER RIGHT WING: 向春 -> 长清 -> 文炳, 文华 -> 治国, 治庆, 治祥 -> 广字辈
+  // --------------------------------------------------------------------------
+  const g8_changqing = drawUnit({
+    x: 2980, y: 735, cn: "长清", py: "changqing", gender: "M", order: "一",
+    spouses: [{ cn: "郭氏", py: "guoshi", gender: "F" }],
+    meta: { gen: "8世", branch: "向春支", parents: "向春 & 贾氏", children: "文华, 文炳" }
+  });
+  connectChildren(2980, g7_xiangchun.bottomY, 680, [g8_changqing]);
+
+  const g9_wenbing = drawUnit({
+    x: 2820, y: 850, cn: "文炳", py: "wenbing", gender: "M", order: "二",
+    spouses: [{ cn: "郭氏", py: "guoshi", gender: "F" }],
+    meta: { gen: "9世", branch: "向春支", parents: "长清 & 郭氏", children: "治国, 治庆, 治祥" }
+  });
+  const g9_wenhua = drawUnit({
+    x: 3110, y: 850, cn: "文华", py: "wenhua", gender: "M", order: "一",
+    spouses: [
+      { cn: "张氏", py: "zhangshi", gender: "F" },
+      { cn: "周氏", py: "zhoushi", gender: "F" }
+    ],
+    meta: { gen: "9世", branch: "向春支", parents: "长清 & 郭氏" }
+  });
+  connectChildren(2980, g8_changqing.bottomY, 795, [g9_wenbing, g9_wenhua]);
+
+  // Gen 10 under 文炳
+  const g10_zhiguo = drawUnit({
+    x: 2630, y: 970, cn: "治国", py: "zhiguo", gender: "M", order: "三",
+    spouses: [{ cn: "郭氏", py: "guoshi", gender: "F" }],
+    meta: { gen: "10世", branch: "向春支", parents: "文炳 & 郭氏", children: "广忠, 广卫" }
+  });
+  const g10_zhiqing = drawUnit({
+    x: 2850, y: 970, cn: "治庆", py: "zhiqing", gender: "M", order: "二",
+    spouses: [{ cn: "石氏", py: "shishi", gender: "F" }],
+    meta: { gen: "10世", branch: "向春支", parents: "文炳 & 郭氏", children: "广杰" }
+  });
+  const g10_zhixiang = drawUnit({
+    x: 3080, y: 970, cn: "治祥", py: "zhixiang", gender: "M", order: "一",
+    spouses: [{ cn: "张氏", py: "zhangshi", gender: "F" }],
+    meta: { gen: "10世", branch: "向春支", parents: "文炳 & 郭氏", children: "广斌, 广勇" }
+  });
+  connectChildren(2820, g9_wenbing.bottomY, 910, [g10_zhiguo, g10_zhiqing, g10_zhixiang]);
+
+  // Gen 11 under 治国, 治庆, 治祥
+  const g11_guangwei = drawUnit({
+    x: 2580, y: 1085, cn: "广卫", py: "guangwei", gender: "M", order: "二",
+    meta: { gen: "11世", branch: "向春支", parents: "治国 & 郭氏" }
+  });
+  const g11_guangzhong = drawUnit({
+    x: 2685, y: 1085, cn: "广忠", py: "guangzhong", gender: "M", order: "一",
+    meta: { gen: "11世", branch: "向春支", parents: "治国 & 郭氏" }
+  });
+  connectChildren(2630, g10_zhiguo.bottomY, 1028, [g11_guangwei, g11_guangzhong]);
+
+  const g11_guangjie = drawUnit({
+    x: 2850, y: 1085, cn: "广杰", py: "guangjie", gender: "M", order: "一",
+    meta: { gen: "11世", branch: "向春支", parents: "治庆 & 石氏" }
+  });
+  connectChildren(2850, g10_zhiqing.bottomY, 1028, [g11_guangjie]);
+
+  const g11_guangbin = drawUnit({
+    x: 3030, y: 1085, cn: "广斌", py: "guangbin", gender: "M", order: "二",
+    meta: { gen: "11世", branch: "向春支", parents: "治祥 & 张氏" }
+  });
+  const g11_guangyong = drawUnit({
+    x: 3135, y: 1085, cn: "广勇", py: "guangyong", gender: "M", order: "一",
+    meta: { gen: "11世", branch: "向春支", parents: "治祥 & 张氏" }
+  });
+  connectChildren(3080, g10_zhixiang.bottomY, 1028, [g11_guangbin, g11_guangyong]);
+
+  // --------------------------------------------------------------------------
+  // 5. LOWER HALF: THREE SONS OF 向荣 (长润 Left, 长兰 Center, 长龄 Right)
+  // --------------------------------------------------------------------------
+  const g8_changrun = drawUnit({
+    x: 1180, y: 1180, cn: "长润", py: "changrun", gender: "M", order: "三",
+    spouses: [{ cn: "郭氏", py: "guoshi", gender: "F" }],
+    meta: { gen: "8世 (直系)", branch: "长润房", parents: "向荣 & 周氏", children: "文德 (一), 文藻 (二)" }
+  });
+
+  const g8_changlan = drawUnit({
+    x: 2000, y: 1180, cn: "长兰", py: "changlan", gender: "M", order: "二",
+    spouses: [
+      { cn: "黄氏", py: "huangshi", gender: "F" },
+      { cn: "聊氏", py: "liaoshi", gender: "F" }
+    ],
+    meta: { gen: "8世", branch: "长兰房", parents: "向荣 & 周氏", children: "文魁 (一), 文选 (二)" }
+  });
+
+  const g8_changling = drawUnit({
+    x: 2920, y: 1180, cn: "长龄", py: "changling", gender: "M", order: "一",
+    spouses: [
+      { cn: "王氏", py: "wanshi", gender: "F" },
+      { cn: "鲁氏", py: "lushi", gender: "F" },
+      { cn: "李氏", py: "lishi", gender: "F" },
+      { cn: "盛氏", py: "shengshi", gender: "F" }
+    ],
+    meta: { gen: "8世", branch: "长龄房", parents: "向荣 & 周氏", children: "文西, 文林, 文潘, 文堂, 文耀" }
+  });
+
+  connectChildren(CX, g7_xiangrong.bottomY, 1110, [g8_changrun, g8_changlan, g8_changling]);
+
+  // --------------------------------------------------------------------------
+  // 6. BOTTOM-CENTER: 长兰 -> 文选, 文魁 -> 治顺, 治民 -> 广海, 广荣, 广兴, 广通
+  // --------------------------------------------------------------------------
+  const g9_wenxuan = drawUnit({
+    x: 1850, y: 1330, cn: "文选", py: "wenxuan", gender: "M", order: "二",
+    spouses: [{ cn: "李氏", py: "lishi", gender: "F" }],
+    meta: { gen: "9世", branch: "长兰房", parents: "长兰", children: "治顺" }
+  });
+  const g9_wenkui = drawUnit({
+    x: 2150, y: 1330, cn: "文魁", py: "wenkui", gender: "M", order: "一",
+    spouses: [{ cn: "刘氏", py: "liushi", gender: "F" }],
+    meta: { gen: "9世", branch: "长兰房", parents: "长兰", children: "治民" }
+  });
+  connectChildren(2000, g8_changlan.bottomY, 1265, [g9_wenxuan, g9_wenkui]);
+
+  const g10_zhishun = drawUnit({
+    x: 1850, y: 1465, cn: "治顺", py: "zhishun", gender: "M", order: "一",
+    spouses: [{ cn: "金氏", py: "jinshi", gender: "F" }],
+    meta: { gen: "10世", branch: "长兰房", parents: "文选 & 李氏", children: "广海, 广荣, 广兴" }
+  });
+  const g10_zhimin = drawUnit({
+    x: 2180, y: 1465, cn: "治民", py: "zhimin", gender: "M", order: "一",
+    spouses: [{ cn: "张氏", py: "zhangshi", gender: "F" }],
+    meta: { gen: "10世", branch: "长兰房", parents: "文魁 & 刘氏", children: "广通" }
+  });
+  connectChildren(1850, g9_wenxuan.bottomY, 1400, [g10_zhishun]);
+  connectChildren(2150, g9_wenkui.bottomY, 1400, [g10_zhimin]);
+
+  const g11_guanghai = drawUnit({
+    x: 1680, y: 1600, cn: "广海", py: "guanghai", gender: "M", order: "三",
+    spouses: [{ cn: "氏", py: "shi", gender: "F" }],
+    meta: { gen: "11世", branch: "长兰房", parents: "治顺 & 金氏" }
+  });
+  const g11_guangrong = drawUnit({
+    x: 1840, y: 1600, cn: "广荣", py: "guangrong", gender: "M", order: "二",
+    spouses: [{ cn: "氏", py: "shi", gender: "F" }],
+    meta: { gen: "11世", branch: "长兰房", parents: "治顺 & 金氏" }
+  });
+  const g11_guangxing = drawUnit({
+    x: 2000, y: 1600, cn: "广兴", py: "guangxing", gender: "M", order: "一",
+    spouses: [{ cn: "仁氏", py: "renshi", gender: "F" }],
+    meta: { gen: "11世", branch: "长兰房", parents: "治顺 & 金氏" }
+  });
+  connectChildren(1850, g10_zhishun.bottomY, 1535, [g11_guanghai, g11_guangrong, g11_guangxing]);
+
+  const g11_guangtong2 = drawUnit({
+    x: 2180, y: 1600, cn: "广通", py: "guangtong", gender: "M", order: "一",
+    spouses: [{ cn: "王氏", py: "zhangshi", gender: "F" }],
+    meta: { gen: "11世", branch: "长兰房", parents: "治民 & 张氏" }
+  });
+  connectChildren(2180, g10_zhimin.bottomY, 1535, [g11_guangtong2]);
+
+  // --------------------------------------------------------------------------
+  // 7. BOTTOM-RIGHT: 长龄 -> 文耀, 文堂, 文潘, 文林, 文西
+  // --------------------------------------------------------------------------
+  const g9_wenyao = drawUnit({
+    x: 2520, y: 1330, cn: "文耀", py: "wenyao", gender: "M", order: "五",
+    spouses: [
+      { cn: "张氏", py: "zhangshi", gender: "F" },
+      { cn: "耿氏", py: "gengshi", gender: "F" }
+    ],
+    meta: { gen: "9世", branch: "长龄房", parents: "长龄" }
+  });
+  const g9_wentang = drawUnit({
+    x: 2740, y: 1330, cn: "文堂", py: "wentang", gender: "M", order: "四",
+    spouses: [{ cn: "蒋氏", py: "jiangshi", gender: "F" }],
+    meta: { gen: "9世", branch: "长龄房", parents: "长龄", children: "治安" }
+  });
+  const g9_wenpan = drawUnit({
+    x: 2940, y: 1330, cn: "文潘", py: "wenpan", gender: "M", order: "三",
+    spouses: [{ cn: "黄氏", py: "huangshi", gender: "F" }],
+    meta: { gen: "9世", branch: "长龄房", parents: "长龄" }
+  });
+  const g9_wenlin = drawUnit({
+    x: 3140, y: 1330, cn: "文林", py: "wenlin", gender: "M", order: "二",
+    spouses: [{ cn: "孙氏", py: "sunshi", gender: "F" }],
+    meta: { gen: "9世", branch: "长龄房", parents: "长龄", children: "三女" }
+  });
+  const g9_wenxi = drawUnit({
+    x: 3340, y: 1330, cn: "文西", py: "wenxi", gender: "M", order: "一",
+    spouses: [{ cn: "郭氏", py: "guoshi", gender: "F" }],
+    meta: { gen: "9世", branch: "长龄房", parents: "长龄", children: "治邦" }
+  });
+  connectChildren(2920, g8_changling.bottomY, 1265, [
+    g9_wenyao, g9_wentang, g9_wenpan, g9_wenlin, g9_wenxi
+  ]);
+
+  const g10_zhian = drawUnit({
+    x: 2740, y: 1465, cn: "治安", py: "zhian", gender: "M", order: "一",
+    spouses: [{ cn: "李氏", py: "lishi", gender: "F" }],
+    meta: { gen: "10世", branch: "长龄房", parents: "文堂 & 蒋氏" }
+  });
+  connectChildren(2740, g9_wentang.bottomY, 1400, [g10_zhian]);
+
+  const g10_sannv = drawUnit({
+    x: 3140, y: 1465, cn: "三女", py: "", gender: "F", order: "一",
+    meta: { gen: "10世", branch: "长龄房", parents: "文林 & 孙氏" }
+  });
+  connectChildren(3140, g9_wenlin.bottomY, 1400, [g10_sannv]);
+
+  const g10_zhibang = drawUnit({
+    x: 3340, y: 1465, cn: "治邦", py: "zhibang", gender: "M", order: "一",
+    spouses: [{ cn: "霍新庄", py: "huoxinzhuang", gender: "F" }],
+    meta: { gen: "10世", branch: "长龄房", parents: "文西 & 郭氏", children: "三子二女" }
+  });
+  connectChildren(3340, g9_wenxi.bottomY, 1400, [g10_zhibang]);
+
+  const g11_sanziernv = drawUnit({
+    x: 3340, y: 1600, cn: "三子二女", py: "", gender: "M", order: "一",
+    meta: { gen: "11世", branch: "长龄房", parents: "治邦 & 霍新庄" }
+  });
+  connectChildren(3340, g10_zhibang.bottomY, 1535, [g11_sanziernv]);
+
+  // --------------------------------------------------------------------------
+  // 8. BOTTOM-LEFT: 长润 -> 文藻, 文德 -> 朱承 (爷爷) & 王凤荣 (奶奶) + AIHUA YI LINE
+  // --------------------------------------------------------------------------
+  const g9_wenzao = drawUnit({
+    x: 1050, y: 1330, cn: "文藻", py: "wenzao", gender: "M", order: "二",
+    spouses: [{ cn: "朱氏", py: "zhushi", gender: "F" }],
+    meta: { gen: "9世 (直系)", branch: "长润房", parents: "长润 & 郭氏", children: "朱承 (爷爷)" }
+  });
+  const g9_wende = drawUnit({
+    x: 1420, y: 1330, cn: "文德", py: "wende", gender: "M", order: "一",
+    spouses: [{ cn: "陈氏", py: "chenshi", gender: "F" }],
+    meta: { gen: "9世", branch: "长润房", parents: "长润 & 郭氏", children: "治平" }
+  });
+  connectChildren(1180, g8_changrun.bottomY, 1265, [g9_wenzao, g9_wende]);
+
+  // Under 文德: 治平 -> 女
+  const g10_zhiping = drawUnit({
+    x: 1420, y: 1465, cn: "治平", py: "zhiping", gender: "M", order: "一",
+    spouses: [{ cn: "蒋氏", py: "jiangshi", gender: "F" }],
+    meta: { gen: "10世", branch: "长润房", parents: "文德 & 陈氏", children: "女" }
+  });
+  connectChildren(1420, g9_wende.bottomY, 1400, [g10_zhiping]);
+
+  const g11_zhiping_nv = drawUnit({
+    x: 1420, y: 1600, cn: "女", py: "", gender: "F", order: "一",
+    meta: { gen: "11世", branch: "长润房", parents: "治平 & 蒋氏" }
+  });
+  connectChildren(1420, g10_zhiping.bottomY, 1535, [g11_zhiping_nv]);
+
+  // Under 文藻: 朱承 (爷爷) — 王凤荣 (奶奶)
+  const g10_zhucheng = drawUnit({
+    x: 1050, y: 1465, cn: "朱承", py: "爷爷 zhucheng", gender: "M", order: "一",
+    spouses: [{ cn: "王凤荣", py: "奶奶 wangfengrong", gender: "F" }],
+    meta: {
+      en: "Grandfather (爷爷)",
+      gen: "10世 (祖父辈)",
+      branch: "刘氏直系 (Paternal Grandparents)",
+      parents: "文藻 & 朱氏",
+      children: "应广 (Yingguang Liu), 大姑, 二姑, 小姑"
+    }
+  });
+  connectChildren(1050, g9_wenzao.bottomY, 1400, [g10_zhucheng]);
+
+  // --------------------------------------------------------------------------
+  // 9. AIHUA YI'S PARENTS (老爷 & 姥姥) AT GENERATION 10 LEVEL (x = 340, y = 1465)
+  // --------------------------------------------------------------------------
+  const g10_laoye = drawUnit({
+    x: 340, y: 1465, cn: "老爷", py: "laoye", gender: "M", hasParent: false,
+    spouses: [{ cn: "姥姥", py: "laolao", gender: "F" }],
+    meta: {
+      en: "Maternal Grandfather (老爷)",
+      gen: "10世 (外祖父母辈)",
+      branch: "伊氏母系 (Aihua Yi Line)",
+      parents: "-",
+      children: "伊爱华 (Aihua Yi), 大姨, 舅舅"
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // 10. GENERATION 11:
+  //   - Left (from 老爷 & 姥姥): 舅舅 — 舅吗, 大姨 — 姨父, 伊爱华 (Aihua Yi)
+  //   - Center Union: 伊爱华 (Aihua Yi) — 应广 (Yingguang Liu)
+  //   - Right (from 朱承 & 王凤荣): 应广 (Yingguang Liu), 大姑 — 大姑父, 二姑 — 二姑父, 小姑 — 小姑父
+  // --------------------------------------------------------------------------
+  // Maternal siblings from 老爷 & 姥姥
+  const g11_jiujiu = drawUnit({
+    x: 150, y: 1630, cn: "舅舅", py: "jiujiu", gender: "M", order: "三",
+    spouses: [{ cn: "舅吗", py: "jiuma", gender: "F" }],
+    meta: {
+      gen: "11世 (母系舅父母)",
+      branch: "伊氏母系 (Aihua Yi Line)",
+      parents: "老爷 & 姥姥",
+      children: "YanYan"
+    }
+  });
+
+  const g11_dayi = drawUnit({
+    x: 340, y: 1630, cn: "大姨", py: "dayi", gender: "F", order: "二",
+    spouses: [{ cn: "姨父", py: "yifu", gender: "M" }],
+    meta: {
+      gen: "11世 (母系姨父母)",
+      branch: "伊氏母系 (Aihua Yi Line)",
+      parents: "老爷 & 姥姥",
+      children: "表哥"
+    }
+  });
+
+  // Central couple: 伊爱华 (Aihua Yi) at x=595 married to 应广 (Yingguang Liu) at x=675
+  const aihuaX = 595;
+  const yingguangX = 675;
+  const gen11Y = 1630;
+
+  drawPersonNode({
+    x: aihuaX, y: gen11Y,
+    cn: "伊爱华", py: "Aihua Yi", gender: "F", order: "一", hasTopRing: true,
+    meta: {
+      en: "Aihua Yi",
+      gen: "11世 (母亲 Mother)",
+      branch: "伊氏 / 刘氏核心 (Aihua Yi Line)",
+      parents: "老爷 (M) & 姥姥 (F)",
+      spouseNames: "应广 Yingguang Liu (M)",
+      children: "CiCi Lin (Liu Xuexi), Isaac Liu (Liu Hua Mao), Teddy Liu (Liu Hua Wu)"
+    }
+  });
+
+  drawPersonNode({
+    x: yingguangX, y: gen11Y,
+    cn: "应广", py: "Yingguang Liu", gender: "M", order: "一", hasTopRing: true,
+    meta: {
+      en: "Yingguang Liu",
+      gen: "11世 (父亲 Father)",
+      branch: "刘氏直系 (Liu Direct Line)",
+      parents: "朱承 (爷爷) & 王凤荣 (奶奶)",
+      spouseNames: "伊爱华 Aihua Yi (F)",
+      children: "CiCi Lin (Liu Xuexi), Isaac Liu (Liu Hua Mao), Teddy Liu (Liu Hua Wu)"
+    }
+  });
+
+  // Marriage line between 伊爱华 and 应广
+  drawLine(aihuaX + CIRCLE_R, gen11Y, yingguangX - BOX_HALF, gen11Y, "marriage-line");
+
+  // Connect 老爷 & 姥姥 (x=340) to 舅舅 (150), 大姨 (340), and 伊爱华 (595)
+  connectChildren(340, g10_laoye.bottomY, 1550, [
+    g11_jiujiu,
+    g11_dayi,
+    { x: aihuaX, topY: gen11Y - CIRCLE_R, order: "一" }
+  ]);
+
+  // Paternal aunts from 朱承 (爷爷) & 王凤荣 (奶奶)
+  const g11_dagu = drawUnit({
+    x: 830, y: 1630, cn: "大姑", py: "dagu", gender: "F", order: "二",
+    spouses: [{ cn: "大姑父", py: "dagufu", gender: "M" }],
+    meta: {
+      gen: "11世 (父系姑父母)",
+      branch: "刘氏宗亲",
+      parents: "朱承 (爷爷) & 王凤荣 (奶奶)",
+      children: "DongDong"
+    }
+  });
+
+  const g11_ergu = drawUnit({
+    x: 1020, y: 1630, cn: "二姑", py: "ergu", gender: "F", order: "三",
+    spouses: [{ cn: "二姑父", py: "ergufu", gender: "M" }],
+    meta: {
+      gen: "11世 (父系姑父母)",
+      branch: "刘氏宗亲",
+      parents: "朱承 (爷爷) & 王凤荣 (奶奶)",
+      children: "MiaoMiao, Cousin"
+    }
+  });
+
+  const g11_xiaogu = drawUnit({
+    x: 1210, y: 1630, cn: "小姑", py: "xiaogu", gender: "F", order: "四",
+    spouses: [{ cn: "小姑父", py: "xiaogufu", gender: "M" }],
+    meta: {
+      gen: "11世 (父系姑父母)",
+      branch: "刘氏宗亲",
+      parents: "朱承 (爷爷) & 王凤荣 (奶奶)",
+      children: "AnQi"
+    }
+  });
+
+  // Connect 朱承 & 王凤荣 (x=1050) to 应广 (675), 大姑 (830), 二姑 (1020), 小姑 (1210)
+  connectChildren(1050, g10_zhucheng.bottomY, 1550, [
+    { x: yingguangX, topY: gen11Y - BOX_HALF, order: "一" },
+    g11_dagu,
+    g11_ergu,
+    g11_xiaogu
+  ]);
+
+  // --------------------------------------------------------------------------
+  // 11. GENERATION 12: CHILDREN & COUSINS (y = 1805)
+  // --------------------------------------------------------------------------
+  // Under 舅舅 & 舅吗: YanYan (F)
+  const g12_yanyan = drawUnit({
+    x: 150, y: 1805, cn: "YanYan", py: "", gender: "F", order: "一",
+    meta: {
+      gen: "12世 (表亲)",
+      branch: "伊氏舅舅家",
+      parents: "舅舅 (M) & 舅吗 (F)"
+    }
+  });
+  connectChildren(150, g11_jiujiu.bottomY, 1720, [g12_yanyan]);
+
+  // Under 大姨 & 姨父: 表哥 (M)
+  const g12_biaoge = drawUnit({
+    x: 340, y: 1805, cn: "表哥", py: "biaoge", gender: "M", order: "一",
+    meta: {
+      gen: "12世 (表亲)",
+      branch: "伊氏大姨家",
+      parents: "大姨 (F) & 姨父 (M)"
+    }
+  });
+  connectChildren(340, g11_dayi.bottomY, 1720, [g12_biaoge]);
+
+  // Under 应广 & 伊爱华:
+  //   1. Liu Hua Wu (Teddy Liu, M, order 三)
+  //   2. Liu Hua Mao (Isaac Liu, M, order 二)
+  //   3. Liu Xuexi (CiCi Lin, F, order 一) — Austin Lin (M)
+  const g12_teddy = drawUnit({
+    x: 490, y: 1805, cn: "刘华武", py: "Teddy Liu", gender: "M", order: "三",
+    meta: {
+      en: "Liu Hua Wu / Teddy Liu",
+      gen: "12世 (华字辈)",
+      branch: "刘氏直系 (Core Family)",
+      parents: "Yingguang Liu (应广) & Aihua Yi (伊爱华)",
+      note: "PDF: Liu Hua Wu"
+    }
+  });
+
+  const g12_isaac = drawUnit({
+    x: 590, y: 1805, cn: "刘华茂", py: "Isaac Liu", gender: "M", order: "二",
+    meta: {
+      en: "Liu Hua Mao / Isaac Liu",
+      gen: "12世 (华字辈)",
+      branch: "刘氏直系 (Core Family)",
+      parents: "Yingguang Liu (应广) & Aihua Yi (伊爱华)",
+      note: "PDF: Liu Hua Mao"
+    }
+  });
+
+  const g12_cici = drawUnit({
+    x: 690, y: 1805, cn: "刘雪希", py: "CiCi Lin", gender: "F", order: "一",
+    spouses: [{ cn: "Austin", py: "Lin", gender: "M" }],
+    meta: {
+      en: "Liu Xuexi / CiCi Lin",
+      gen: "12世 (华字辈)",
+      branch: "刘氏 / 林氏 (Core Family)",
+      parents: "Yingguang Liu (应广) & Aihua Yi (伊爱华)",
+      children: "Alexandra Lin (F), Titus Lin (M), Timothy Lin (M)",
+      note: "PDF: Liu Xuexi"
+    }
+  });
+
+  // Drop line from midpoint of 伊爱华 (595) & 应广 (675) = 635
+  const parentsMidX = (aihuaX + yingguangX) / 2;
+  drawLine(parentsMidX, gen11Y, parentsMidX, gen11Y + BOX_HALF);
+  connectChildren(parentsMidX, gen11Y + BOX_HALF, 1720, [
+    g12_teddy,
+    g12_isaac,
+    g12_cici
+  ]);
+
+  // Under 大姑 & 大姑父: DongDong (F)
+  const g12_dongdong = drawUnit({
+    x: 865, y: 1805, cn: "DongDong", py: "", gender: "F", order: "一",
+    meta: {
+      gen: "12世 (表亲)",
+      branch: "大姑家",
+      parents: "大姑 (F) & 大姑父 (M)"
+    }
+  });
+  connectChildren(830, g11_dagu.bottomY, 1720, [g12_dongdong]);
+
+  // Under 二姑 & 二姑父: Cousin (M), MiaoMiao (F)
+  const g12_cousin = drawUnit({
+    x: 1000, y: 1805, cn: "Cousin", py: "", gender: "M", order: "二",
+    meta: {
+      gen: "12世 (表亲)",
+      branch: "二姑家",
+      parents: "二姑 (F) & 二姑父 (M)"
+    }
+  });
+  const g12_miaomiao = drawUnit({
+    x: 1095, y: 1805, cn: "MiaoMiao", py: "", gender: "F", order: "一",
+    meta: {
+      gen: "12世 (表亲)",
+      branch: "二姑家",
+      parents: "二姑 (F) & 二姑父 (M)"
+    }
+  });
+  connectChildren(1020, g11_ergu.bottomY, 1720, [g12_cousin, g12_miaomiao]);
+
+  // Under 小姑 & 小姑父: AnQi (F)
+  const g12_anqi = drawUnit({
+    x: 1210, y: 1805, cn: "AnQi", py: "", gender: "F", order: "一",
+    meta: {
+      gen: "12世 (表亲)",
+      branch: "小姑家",
+      parents: "小姑 (F) & 小姑父 (M)"
+    }
+  });
+  connectChildren(1210, g11_xiaogu.bottomY, 1720, [g12_anqi]);
+
+  // --------------------------------------------------------------------------
+  // 12. GENERATION 13: CHILDREN OF CICI LIN & AUSTIN LIN (y = 1975)
+  // --------------------------------------------------------------------------
+  const g13_timothy = drawUnit({
+    x: 610, y: 1975, cn: "Timothy", py: "Lin", gender: "M", order: "三",
+    meta: {
+      en: "Timothy Lin",
+      gen: "13世 (外孙)",
+      branch: "CiCi & Austin Lin Family",
+      parents: "CiCi Lin (F) & Austin Lin (M)"
+    }
+  });
+
+  const g13_titus = drawUnit({
+    x: 725, y: 1975, cn: "Titus", py: "Lin", gender: "M", order: "二",
+    meta: {
+      en: "Titus Lin",
+      gen: "13世 (外孙)",
+      branch: "CiCi & Austin Lin Family",
+      parents: "CiCi Lin (F) & Austin Lin (M)"
+    }
+  });
+
+  const g13_alexandra = drawUnit({
+    x: 840, y: 1975, cn: "Alexandra", py: "Lin", gender: "F", order: "一",
+    meta: {
+      en: "Alexandra Lin",
+      gen: "13世 (外孙女)",
+      branch: "CiCi & Austin Lin Family",
+      parents: "CiCi Lin (F) & Austin Lin (M)"
+    }
+  });
+
+  // Connect from CiCi & Austin marriage midpoint (690 + 34 = 724)
+  const ciciAustinMidX = 690 + 34;
+  drawLine(ciciAustinMidX, 1805, ciciAustinMidX, 1805 + BOX_HALF);
+  connectChildren(ciciAustinMidX, 1805 + BOX_HALF, 1890, [
+    g13_timothy,
+    g13_titus,
+    g13_alexandra
+  ]);
+}
+
+// ============================================================================
+// INTERACTIVITY: TOGGLE SHAPES, SEARCH, PAN & ZOOM, POPOVER, DOWNLOAD
+// ============================================================================
+let shapesEnabled = true;
+
+function toggleGenderShapes() {
+  shapesEnabled = !shapesEnabled;
+  const svg = document.getElementById("jiapu-svg");
+  const btn = document.getElementById("toggle-shapes-btn");
+  const lbl = document.getElementById("toggle-shapes-label");
+
+  if (shapesEnabled) {
+    svg.classList.add("show-gender-shapes");
+    btn.classList.add("active");
+    lbl.textContent = "男方女圆: ON (Men = Squares, Women = Circles)";
+  } else {
+    svg.classList.remove("show-gender-shapes");
+    btn.classList.remove("active");
+    lbl.textContent = "男方女圆: OFF (Original PDF Style)";
+  }
+}
+
+function openPopover(p) {
+  const pop = document.getElementById("person-popover");
+  const shape = document.getElementById("pop-shape");
+  const isMale = p.gender === "M";
+
+  shape.className = "pop-shape " + (isMale ? "male" : "female");
+  document.getElementById("pop-title").textContent = `${p.cn}${p.py ? ' (' + p.py + ')' : ''}`;
+  document.getElementById("pop-sub").textContent = isMale
+    ? "Male (M) · Black Square"
+    : "Female (F) · Red Circle";
+
+  const m = p.meta || {};
+  document.getElementById("pop-gen").textContent = m.gen || "-";
+  document.getElementById("pop-branch").textContent = m.branch || "-";
+  document.getElementById("pop-parents").textContent = m.parents || "-";
+  document.getElementById("pop-spouse").textContent = m.spouseNames || "-";
+  document.getElementById("pop-children").textContent = m.children || "-";
+
+  pop.style.display = "block";
+}
+
+function closePopover() {
+  document.getElementById("person-popover").style.display = "none";
+}
+
+function handlePdfSearch(q) {
+  q = q.trim().toLowerCase();
+  const clearBtn = document.getElementById("pdf-search-clear");
+  const countBadge = document.getElementById("pdf-search-count");
+  const groups = document.querySelectorAll(".person-group");
+
+  if (!q) {
+    clearBtn.style.display = "none";
+    countBadge.style.display = "none";
+    groups.forEach(g => g.classList.remove("search-match"));
+    return;
+  }
+
+  clearBtn.style.display = "block";
+  let matches = 0;
+  groups.forEach(g => {
+    const hay = g.getAttribute("data-search") || "";
+    if (hay.includes(q)) {
+      g.classList.add("search-match");
+      matches++;
+    } else {
+      g.classList.remove("search-match");
+    }
+  });
+
+  countBadge.textContent = matches;
+  countBadge.style.display = "inline-block";
+}
+
+function clearPdfSearch() {
+  const input = document.getElementById("pdf-search-input");
+  input.value = "";
+  handlePdfSearch("");
+}
+
+// Pan & Zoom State
+let pScale = 0.45;
+let pPanX = 0;
+let pPanY = 0;
+let pDragging = false;
+let pStartX = 0;
+let pStartY = 0;
+
+function updatePdfTransform() {
+  const canvas = document.getElementById("pdf-canvas");
+  canvas.style.transform = `translate(${pPanX}px, ${pPanY}px) scale(${pScale})`;
+}
+
+function fitPdfToScreen() {
+  const vp = document.getElementById("pdf-viewport");
+  const vW = vp.clientWidth;
+  const vH = vp.clientHeight;
+  const svgW = 3900;
+  const svgH = 2220;
+
+  pScale = Math.min((vW - 30) / svgW, (vH - 30) / svgH);
+  pPanX = Math.max((vW - svgW * pScale) / 2, 10);
+  pPanY = Math.max((vH - svgH * pScale) / 2, 10);
+  updatePdfTransform();
+}
+
+function zoomInPdf() {
+  pScale = Math.min(pScale * 1.25, 3.0);
+  updatePdfTransform();
+}
+
+function zoomOutPdf() {
+  pScale = Math.max(pScale * 0.8, 0.15);
+  updatePdfTransform();
+}
+
+function resetPdfZoom() {
+  pScale = 1.0;
+  pPanX = 20;
+  pPanY = 20;
+  updatePdfTransform();
+}
+
+function downloadJiapuSvg() {
+  const svg = document.getElementById("jiapu-svg");
+  const serializer = new XMLSerializer();
+  let src = serializer.serializeToString(svg);
+  const blob = new Blob([src], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "liu-family-tree-jiapu.svg";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  buildFullJiapuTree();
+  fitPdfToScreen();
+
+  const vp = document.getElementById("pdf-viewport");
+
+  vp.addEventListener("mousedown", (e) => {
+    if (e.target.closest(".person-popover")) return;
+    pDragging = true;
+    pStartX = e.clientX - pPanX;
+    pStartY = e.clientY - pPanY;
+  });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!pDragging) return;
+    pPanX = e.clientX - pStartX;
+    pPanY = e.clientY - pStartY;
+    updatePdfTransform();
+  });
+
+  window.addEventListener("mouseup", () => {
+    pDragging = false;
+  });
+
+  vp.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.12 : 0.88;
+    const rect = vp.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    const nextScale = Math.min(Math.max(pScale * factor, 0.15), 3.0);
+    pPanX = mx - (mx - pPanX) * (nextScale / pScale);
+    pPanY = my - (my - pPanY) * (nextScale / pScale);
+    pScale = nextScale;
+    updatePdfTransform();
+  }, { passive: false });
+
+  window.addEventListener("resize", fitPdfToScreen);
+});
+</script>
+{{ end }}

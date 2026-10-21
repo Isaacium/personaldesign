@@ -35,6 +35,13 @@ hasCJKLanguage = true
     weight = 10
 
 [[menu.main]]
+    identifier = "family-tree"
+    # name = "Family Tree"
+    pre = "<i class='fa fa-sitemap fa-lg' title='Family Tree'></i>"
+    url = "/family-tree/"
+    weight = 15
+
+[[menu.main]]
     identifier = "github"
     # name = "GitHub"
     pre = "<i class='fab fa-github fa-lg'></i>"
